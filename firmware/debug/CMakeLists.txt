@@ -11,3 +11,5 @@ function(generate_ozone_project board device)
 endfunction()
 
 generate_ozone_project(nucleo_l476rg STM32L476RG)
+generate_ozone_project(nucleo_f446ze STM32F446ZE)
+generate_ozone_project(stm32f4_disco STM32F407VG)
