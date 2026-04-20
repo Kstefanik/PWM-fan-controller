@@ -45,5 +45,27 @@
             "group": "build",
             "problemMatcher": "$gcc"
         },
+        // STM32F4_DISCO
+        {
+            "label": "Build for F407VGT6: DEBUG",
+            "type": "shell",
+            "command": "west build -b stm32f4_disco/stm32f407xx -d firmware/build/stm32f4_disco firmware/ -- -DOVERLAY_CONFIG=debug.conf && cp firmware/build/stm32f4_disco/compile_commands.json firmware/build/compile_commands.json",
+            "group": "build",
+            "problemMatcher": "$gcc"
+        },
+        {
+            "label": "Build for F407VGT6: DEBUG (Pristine)",
+            "type": "shell",
+            "command": "west build -b stm32f4_disco/stm32f407xx -d firmware/build/stm32f4_disco firmware/ -p always -- -DOVERLAY_CONFIG=debug.conf && cp firmware/build/stm32f4_disco/compile_commands.json firmware/build/compile_commands.json",
+            "group": "build",
+            "problemMatcher": "$gcc"
+        },
+        {
+            "label": "Build for F407VGT6: Production (Pristine)",
+            "type": "shell",
+            "command": "west build -b stm32f4_disco/stm32f407xx -d firmware/build/stm32f4_disco firmware/ -p always -- -DOVERLAY_CONFIG=production.conf && cp firmware/build/stm32f4_disco/compile_commands.json firmware/build/compile_commands.json",
+            "group": "build",
+            "problemMatcher": "$gcc"
+        },
     ]
 }
