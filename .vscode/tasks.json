@@ -23,25 +23,25 @@
             "group": "build",
             "problemMatcher": "$gcc"
         },
-        // NUCLEO_F303RE
+        // NUCLEO_F446ZE
         {
-            "label": "Build for F303RE: DEBUG",
+            "label": "Build for F446ZE: DEBUG",
             "type": "shell",
-            "command": "west build -b nucleo_f303re/stm32f303xe -d firmware/build/nucleo_f303re firmware/ -- -DOVERLAY_CONFIG=debug.conf && cp firmware/build/nucleo_f303re/compile_commands.json firmware/build/compile_commands.json",
+            "command": "west build -b nucleo_f446ze/stm32f446xx -d firmware/build/nucleo_f446ze firmware/ -- -DOVERLAY_CONFIG=debug.conf && cp firmware/build/nucleo_f446ze/compile_commands.json firmware/build/compile_commands.json",
             "group": "build",
             "problemMatcher": "$gcc"
         },
         {
-            "label": "Build for F303RE: DEBUG (Pristine)",
+            "label": "Build for F446ZE: DEBUG (Pristine)",
             "type": "shell",
-            "command": "west build -b nucleo_f303re/stm32f303xe -d firmware/build/nucleo_f303re firmware/ -p always -- -DOVERLAY_CONFIG=debug.conf && cp firmware/build/nucleo_f303re/compile_commands.json firmware/build/compile_commands.json",
+            "command": "west build -b nucleo_f446ze/stm32f446xx -d firmware/build/nucleo_f446ze firmware/ -p always -- -DOVERLAY_CONFIG=debug.conf && cp firmware/build/nucleo_f446ze/compile_commands.json firmware/build/compile_commands.json",
             "group": "build",
             "problemMatcher": "$gcc"
         },
         {
-            "label": "Build for F303RE: Production (Pristine)",
+            "label": "Build for F446ZE: Production (Pristine)",
             "type": "shell",
-            "command": "west build -b nucleo_f303re/stm32f303xe -d firmware/build/nucleo_f303re firmware/ -p always -- -DOVERLAY_CONFIG=production.conf && cp firmware/build/nucleo_f303re/compile_commands.json firmware/build/compile_commands.json",
+            "command": "west build -b nucleo_f446ze/stm32f446xx -d firmware/build/nucleo_f446ze firmware/ -p always -- -DOVERLAY_CONFIG=production.conf && cp firmware/build/nucleo_f446ze/compile_commands.json firmware/build/compile_commands.json",
             "group": "build",
             "problemMatcher": "$gcc"
         },

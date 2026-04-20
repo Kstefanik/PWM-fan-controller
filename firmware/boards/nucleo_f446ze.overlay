@@ -1,0 +1,77 @@
+/ {
+	fan_components {
+		compatible = "pwm-leds";
+
+		fan_pwm: fan_pwm {
+			/* Timer 3, Channel 1, 40us period (25kHz) */
+			pwms = <&pwm3 1 40000 PWM_POLARITY_NORMAL>;
+			label = "FAN_CONTROL_PWM";
+		};
+
+		tacho_input: tacho_input {
+			/* Timer 2, Channel 1, Period 0 */
+			pwms = <&pwm2 1 0 PWM_POLARITY_NORMAL>;
+			label = "FAN_TACHO_INPUT";
+		};
+	};
+};
+
+/* Disable unused peripherals to save power/avoid pin conflicts */
+&usart1 {status = "disabled"; };
+&usart2 {status = "disabled"; };
+&i2c3 {status = "disabled"; };
+&spi1 {status = "disabled"; };
+&spi2 {status = "disabled"; };
+&spi3 {status = "disabled"; };
+
+/* I2C1 for SHT21 Temperature Sensor */
+&i2c1 {
+	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb9>;
+	pinctrl-names = "default";
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+
+	sht21: sht21@40 {
+		compatible = "sensirion,sht21";
+		reg = <0x40>;
+	};
+};
+
+/* Timer 3: Configured for PWM Output (Fan Speed Control) */
+&timers3 {
+	st,prescaler = <0>;
+	status = "okay";
+
+	pwm3: pwm {
+		status = "okay";
+		pinctrl-0 = <&tim3_ch1_pb4>;
+		pinctrl-names = "default";
+		#pwm-cells = <3>;
+	};
+};
+
+/* Timer 2: Configured for Input Capture (Fan Tachometer) */
+&timers2 {
+	/* 80MHz / 80 = 1MHz (1 tick = 1 microsecond) */
+	st,prescaler = <80>;
+	status = "okay";
+
+	pwm2: pwm {
+		status = "okay";
+		pinctrl-0 = <&tim2_ch1_pa0>;
+		pinctrl-names = "default";
+		#pwm-cells = <3>;
+	};
+};
+
+&pinctrl {
+	tim3_ch1_pb4: tim3_ch1_pb4 {
+		pinmux = <STM32_PINMUX('B', 4, AF2)>;
+		bias-pull-up;
+	};
+
+	tim2_ch1_pa0: tim2_ch1_pa0 {
+		pinmux = <STM32_PINMUX('A', 0, AF1)>;
+		bias-pull-up;
+	};
+};
