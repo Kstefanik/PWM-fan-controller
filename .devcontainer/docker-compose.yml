@@ -1,0 +1,21 @@
+services:
+  zephyr-dev:
+    build:
+      context: ..
+      dockerfile: .devcontainer/Dockerfile
+      
+    volumes:      
+      # Mount your local project into the workspace
+      - ..:/workdir/PWM-fan-controller:cached
+      
+      # Create a persistent volume for the build cache
+      - zephyr-ccache:/home/user/.ccache
+
+    environment:
+      - USE_CCACHE=1
+      
+    command: /bin/sh -c "while sleep 1000; do :; done"
+
+volumes:
+  zephyr-ccache:
+  zephyr-workspace:

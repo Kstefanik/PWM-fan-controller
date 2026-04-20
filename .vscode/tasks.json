@@ -1,0 +1,49 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        // NUCLEO_L476RG
+        {
+            "label": "Build for L476RG: DEBUG",
+            "type": "shell",
+            "command": "west build -b nucleo_l476rg/stm32l476xx -d firmware/build/nucleo_l476rg firmware/ -- -DOVERLAY_CONFIG=debug.conf && cp firmware/build/nucleo_l476rg/compile_commands.json firmware/build/compile_commands.json",
+            "group": "build",
+            "problemMatcher": "$gcc"
+        },
+        {
+            "label": "Build for L476RG: DEBUG (Pristine)",
+            "type": "shell",
+            "command": "west build -b nucleo_l476rg/stm32l476xx -d firmware/build/nucleo_l476rg firmware/ -p always -- -DOVERLAY_CONFIG=debug.conf && cp firmware/build/nucleo_l476rg/compile_commands.json firmware/build/compile_commands.json",
+            "group": "build",
+            "problemMatcher": "$gcc"
+        },
+        {
+            "label": "Build for L476RG: Production (Pristine)",
+            "type": "shell",
+            "command": "west build -b nucleo_l476rg/stm32l476xx -d firmware/build/nucleo_l476rg firmware/ -p always -- -DOVERLAY_CONFIG=production.conf && cp firmware/build/nucleo_l476rg/compile_commands.json firmware/build/compile_commands.json",
+            "group": "build",
+            "problemMatcher": "$gcc"
+        },
+        // NUCLEO_F303RE
+        {
+            "label": "Build for F303RE: DEBUG",
+            "type": "shell",
+            "command": "west build -b nucleo_f303re/stm32f303xe -d firmware/build/nucleo_f303re firmware/ -- -DOVERLAY_CONFIG=debug.conf && cp firmware/build/nucleo_f303re/compile_commands.json firmware/build/compile_commands.json",
+            "group": "build",
+            "problemMatcher": "$gcc"
+        },
+        {
+            "label": "Build for F303RE: DEBUG (Pristine)",
+            "type": "shell",
+            "command": "west build -b nucleo_f303re/stm32f303xe -d firmware/build/nucleo_f303re firmware/ -p always -- -DOVERLAY_CONFIG=debug.conf && cp firmware/build/nucleo_f303re/compile_commands.json firmware/build/compile_commands.json",
+            "group": "build",
+            "problemMatcher": "$gcc"
+        },
+        {
+            "label": "Build for F303RE: Production (Pristine)",
+            "type": "shell",
+            "command": "west build -b nucleo_f303re/stm32f303xe -d firmware/build/nucleo_f303re firmware/ -p always -- -DOVERLAY_CONFIG=production.conf && cp firmware/build/nucleo_f303re/compile_commands.json firmware/build/compile_commands.json",
+            "group": "build",
+            "problemMatcher": "$gcc"
+        },
+    ]
+}

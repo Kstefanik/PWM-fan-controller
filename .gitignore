@@ -1,0 +1,14 @@
+sensory_raport.pdf
+
+# Build Directory
+build
+
+# Zephyr Installation
+/.west/
+/bootloader/
+/modules/
+/zephyr/
+
+# Ozone project files (generated or user-specific)
+firmware/debug/*.jdebug
+firmware/debug/*.jdebug.user

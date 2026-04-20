@@ -1,0 +1,12 @@
+CompileFlags:
+  Remove: [
+    -mfp16-format=ieee,
+    -fno-reorder-functions,
+    -fno-printf-return-value,
+  ]
+
+---
+If:
+  PathMatch: ".*/zephyr/.*"
+Diagnostics:
+  Suppress: [pp_hash_error]

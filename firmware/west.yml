@@ -1,0 +1,19 @@
+manifest:
+  remotes:
+    - name: zephyrproject-rtos
+      url-base: https://github.com/zephyrproject-rtos
+
+  projects:
+    - name: zephyr
+      remote: zephyrproject-rtos
+      revision: v3.7.0
+      path: zephyr
+      # import: true
+      import:
+        name-allowlist:
+          - cmsis        # Required for all ARM Cortex-M (STM32)
+          - hal_stm32    # The STMicroelectronics HAL and LL drivers
+          - mbedtls      # Required if you use security/crypto
+          - zcbor        # Frequently used for internal zephyr tools
+          - mcuboot      # Optional: Only if you need a bootloader
+          - segger

@@ -1,0 +1,20 @@
+{
+    "name": "Zephyr 3.7.0",
+    "dockerComposeFile": "docker-compose.yml",
+    "service": "zephyr-dev",
+    "workspaceFolder": "/workdir/PWM-fan-controller",
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "llvm-vs-code-extensions.vscode-clangd",
+                "ms-vscode.cpptools-extension-pack",
+                "eamodio.gitlens",
+                "nordic-semiconductor.nrf-connect-extension-pack",
+                "ms-python.black-formatter",
+                "wysaid.clion-cmake-format"
+            ]
+        }
+    },
+    "remoteUser": "user",
+    "postCreateCommand": "bash .devcontainer/post-create.sh"
+}
