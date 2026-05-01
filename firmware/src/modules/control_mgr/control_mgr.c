@@ -13,6 +13,16 @@ static const struct pwm_dt_spec fan = PWM_DT_SPEC_GET(DT_NODELABEL(fan_pwm));
 
 static int apply_fan_speed(uint8_t duty_percent);
 
+/* PID Controller Parameters */
+#define KP 5.0f
+#define KI 0.5f
+#define KD 1.0f
+
+/* Assumed polling interval in seconds */
+#define PID_DT 0.1f
+#define INTEGRAL_MAX 100.0f
+#define INTEGRAL_MIN -100.0f
+
 static void control_mgr_entry(void) {
   int ret;
   struct sensor_data current_sensor = {0};
@@ -20,6 +30,10 @@ static void control_mgr_entry(void) {
   const struct zbus_channel *chan = {0};
 
   uint8_t target_duty = 50;
+
+  /* PID State Variables */
+  float integral = 0.0f;
+  float prev_error = 0.0f;
 
   if (!pwm_is_ready_dt(&fan)) {
     LOG_ERR("Fan PWM hardware not ready!");
@@ -44,9 +58,35 @@ static void control_mgr_entry(void) {
         LOG_ERR("ZBus control chan read error: %d", ret);
       }
 
-      /*--- TODO: PID calculation ---*/
-      LOG_INF("Current Temp: %.2f C | Target Temp: %.2f C",
-              (double)current_sensor.temp, (double)current_control.target_temp);
+      /* 
+       * Calculate PID error
+       * Positive error means temperature is too high, fan speed should increase
+       */
+      float error = current_sensor.temp - current_control.target_temp;
+      
+      float p_term = KP * error;
+      
+      /* Calculate integral term with anti-windup protection */
+      integral += error * PID_DT;
+      if (integral > INTEGRAL_MAX) integral = INTEGRAL_MAX;
+      if (integral < INTEGRAL_MIN) integral = INTEGRAL_MIN;
+      float i_term = KI * integral;
+      
+      float d_term = KD * (error - prev_error) / PID_DT;
+      prev_error = error;
+
+      float output = p_term + i_term + d_term;
+      
+      /* Constrain output to 0-100% PWM duty cycle */
+      float duty_calc = output;
+      if (duty_calc > 100.0f) duty_calc = 100.0f;
+      if (duty_calc < 0.0f) duty_calc = 0.0f;
+      
+      target_duty = (uint8_t)duty_calc;
+
+      LOG_INF("Temp: %.2f | Target: %.2f | Err: %.2f | PWM: %u%%",
+              (double)current_sensor.temp, (double)current_control.target_temp, 
+              (double)error, target_duty);
 
       ret = apply_fan_speed(target_duty);
       if (ret < 0) {
