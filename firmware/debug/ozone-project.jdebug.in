@@ -18,7 +18,7 @@ void OnProjectLoad(void) {
 
 void AfterProjectLoad(void) {
   // Map DWARF source paths from devcontainer to host workspace location.
-  Project.AddPathSubstitute("@WORKSPACE_ROOT@", "$(ProjectDir)/../..");
+  Project.AddPathSubstitute("/workdir", "$(ProjectDir)/../../..");
 
   // Load the Zephyr OS awareness plugin
   Project.SetOSPlugin("ZephyrPlugin.js");

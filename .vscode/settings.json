@@ -27,10 +27,16 @@
     ],
     "clangd.checkUpdates": false,
     "[c]": {
-        "editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd"
+        "editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd",
+        "editor.tabSize": 2,
+        "editor.detectIndentation": false,
+        "editor.formatOnSave": true
     },
     "[cpp]": {
-        "editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd"
+        "editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd",
+        "editor.tabSize": 2,
+        "editor.detectIndentation": false,
+        "editor.formatOnSave": true
     },
     // --- C/C++ Settings: cpp_tools ---
     // "C_Cpp.intelliSenseEngine": "default",
@@ -39,10 +45,12 @@
     //
     // "[c]": {
     //     "editor.defaultFormatter": "ms-vscode.cpptools",
+    //     "editor.tabSize": 2
     // },
     //
     // "[cpp]": {
     //     "editor.defaultFormatter": "ms-vscode.cpptools",
+    //     "editor.tabSize": 2
     // },
     // --- Python ---
     "[python]": {

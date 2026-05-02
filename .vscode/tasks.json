@@ -67,5 +67,27 @@
             "group": "build",
             "problemMatcher": "$gcc"
         },
+        // NUCLEO_H533RE
+        {
+            "label": "Build for H533RE: DEBUG",
+            "type": "shell",
+            "command": "west build -b nucleo_h533re/stm32h533xx -d firmware/build/nucleo_h533re firmware/ -- -DOVERLAY_CONFIG=debug.conf && cp firmware/build/nucleo_h533re/compile_commands.json firmware/build/compile_commands.json",
+            "group": "build",
+            "problemMatcher": "$gcc"
+        },
+        {
+            "label": "Build for H533RE: DEBUG (Pristine)",
+            "type": "shell",
+            "command": "west build -b nucleo_h533re/stm32h533xx -d firmware/build/nucleo_h533re firmware/ -p always -- -DOVERLAY_CONFIG=debug.conf && cp firmware/build/nucleo_h533re/compile_commands.json firmware/build/compile_commands.json",
+            "group": "build",
+            "problemMatcher": "$gcc"
+        },
+        {
+            "label": "Build for H533RE: Production (Pristine)",
+            "type": "shell",
+            "command": "west build -b nucleo_h533re/stm32h533xx -d firmware/build/nucleo_h533re firmware/ -p always -- -DOVERLAY_CONFIG=production.conf && cp firmware/build/nucleo_h533re/compile_commands.json firmware/build/compile_commands.json",
+            "group": "build",
+            "problemMatcher": "$gcc"
+        },
     ]
 }

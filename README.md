@@ -1,6 +1,6 @@
 # PWM Fan Controller
 
-PWM fan controller based on Zephyr 3.7.0
+PWM fan controller based on Zephyr 4.4.0
 
 ## Repository Layout
 
