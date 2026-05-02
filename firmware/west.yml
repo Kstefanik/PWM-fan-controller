@@ -6,12 +6,13 @@ manifest:
   projects:
     - name: zephyr
       remote: zephyrproject-rtos
-      revision: v3.7.0
+      revision: v4.4.0
       path: zephyr
       # import: true
       import:
         name-allowlist:
           - cmsis        # Required for all ARM Cortex-M (STM32)
+          - cmsis_6
           - hal_stm32    # The STMicroelectronics HAL and LL drivers
           - mbedtls      # Required if you use security/crypto
           - zcbor        # Frequently used for internal zephyr tools

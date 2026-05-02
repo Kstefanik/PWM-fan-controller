@@ -1,4 +1,4 @@
-FROM ghcr.io/zephyrproject-rtos/zephyr-build:v0.26-branch
+FROM ghcr.io/zephyrproject-rtos/zephyr-build:main
 
 # Switch to root to install packages and manage system directories
 USER root

@@ -1,6 +1,5 @@
 # Main application configuration menu
 menu "PWM Fan Controller Application"
-
     menu "Sensor Manager"
         config SENSOR_MGR_STACK_SIZE
             int "Stack size for sensors thread"
@@ -13,6 +12,12 @@ menu "PWM Fan Controller Application"
             default 3
             help
               RTOS priority for the sensor acquisition thread.
+        config SENSOR_POLL_INTERVAL_MS
+            int "Sensor polling interval in ms"
+            default 1000
+        config DEFAULT_TEMP
+            int "Default temperature value"
+            default 100
     endmenu
 
     menu "Control Manager"
@@ -27,6 +32,9 @@ menu "PWM Fan Controller Application"
             default 2
             help
               RTOS priority for the PID and PWM control thread.
+        config DEFAULT_DUTY
+            int "Default duty value for PWM signal"
+            default 20
     endmenu
 
     menu "USB Manager"
@@ -37,6 +45,9 @@ menu "PWM Fan Controller Application"
         config USB_MGR_PRIORITY
             int "Priority for USB communication thread"
             default 5
+        config DEFAULT_TARGET_TEMP
+            int "Default target temperature value"
+            default 40
     endmenu
 
     menu "Tachometer Manager"
@@ -47,6 +58,16 @@ menu "PWM Fan Controller Application"
         config TACHO_MGR_PRIORITY
             int "Priority for tachometer thread"
             default 4
+
+        config TACHO_POLL_INTERVAL_MS
+            int "Tachometer reading interval in ms"
+            default 1000
+        config TACHO_CAPTURE_TIMEOUT_MS
+            int "Tachometer pulse capture timeout in ms"
+            default 1000
+        config DEFAULT_RPM
+            int "Default rpm value"
+            default 0
     endmenu
 
     menu "Bus Configuration"

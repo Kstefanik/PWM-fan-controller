@@ -8,6 +8,7 @@ build
 /bootloader/
 /modules/
 /zephyr/
+/tools/
 
 # Ozone project files (generated or user-specific)
 firmware/debug/*.jdebug

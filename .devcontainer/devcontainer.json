@@ -1,5 +1,5 @@
 {
-    "name": "Zephyr 3.7.0",
+    "name": "Zephyr 4.4.0",
     "dockerComposeFile": "docker-compose.yml",
     "service": "zephyr-dev",
     "workspaceFolder": "/workdir/PWM-fan-controller",

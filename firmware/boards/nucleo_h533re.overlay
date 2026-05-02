@@ -1,0 +1,112 @@
+/* --- Device Tree Root --- */
+
+/ {
+	/* Fan Hardware Control */
+	fan_hw {
+		compatible = "gpio-leds";
+		fan_enable: fan_enable {
+			gpios = <&gpioa 9 GPIO_ACTIVE_HIGH>;
+			label = "Fan Power Enable";
+		};
+	};
+
+	/* Fan PWM & Tachometer Signals */
+	fan_signals {
+		compatible = "pwm-leds";
+		fan_pwm: fan_pwm {
+			pwms = <&pwm3 1 40000 PWM_POLARITY_NORMAL>;
+			label = "Fan PWM Control";
+		};
+
+		tacho_input: tacho_input {
+			pwms = <&pwm4 1 0 PWM_POLARITY_NORMAL>;
+			label = "Fan Tachometer Input";
+		};
+	};
+};
+
+/* --- USB CDC ACM UART --- */
+
+&zephyr_udc0 {
+	cdc_acm_uart0: cdc_acm_uart0 {
+		compatible = "zephyr,cdc-acm-uart";
+	};
+};
+
+/* --- I2C: Temperature Sensor --- */
+
+&i2c1 {
+	status = "okay";
+	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb7>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+
+	temp_sensor: mcp9808@18 {
+		compatible = "jedec,jc-42.4-temp";
+		reg = <0x18>;
+	};
+};
+
+/* --- Timer 3: Fan PWM (TIM3 CH1 on PB4) --- */
+
+&timers3 {
+	status = "okay";
+	st,prescaler = <0>;
+
+	pwm3: pwm {
+		status = "okay";
+		pinctrl-0 = <&tim3_ch1_pb4>;
+		pinctrl-names = "default";
+	};
+};
+
+/* --- Timer 2: Tachometer Input (TIM2 CH1 on PA0) --- */
+
+&timers2 {
+	status = "okay";
+	st,prescaler = <0>;
+
+	pwm4: pwm {
+		status = "okay";
+		pinctrl-0 = <&tim2_ch1_pa0>;
+		pinctrl-names = "default";
+	};
+};
+
+/* --- Pin Configuration --- */
+
+&pinctrl {
+	/* Timer 3, Channel 1 (PWM) */
+	tim3_ch1_pb4: tim3_ch1_pb4 {
+		pinmux = <STM32_PINMUX('B', 4, AF2)>;
+		bias-pull-up;
+	};
+
+	/* Timer 2, Channel 1 (Tachometer) */
+	tim2_ch1_pa0: tim2_ch1_pa0 {
+		pinmux = <STM32_PINMUX('A', 0, AF1)>;
+		bias-pull-up;
+	};
+
+	/* I2C1 Serial Clock */
+	i2c1_scl_pb6: i2c1_scl_pb6 {
+		pinmux = <STM32_PINMUX('B', 6, AF4)>;
+		drive-open-drain;
+		bias-pull-up;
+	};
+
+	/* I2C1 Serial Data */
+	i2c1_sda_pb7: i2c1_sda_pb7 {
+		pinmux = <STM32_PINMUX('B', 7, AF4)>;
+		drive-open-drain;
+		bias-pull-up;
+	};
+};
+
+/* --- Disabled Peripherals --- */
+
+&usart1 { status = "disabled"; };
+&usart2 { status = "disabled"; };
+&spi1 { status = "disabled"; };
+&spi2 { status = "disabled"; };
+&spi3 { status = "disabled"; };
