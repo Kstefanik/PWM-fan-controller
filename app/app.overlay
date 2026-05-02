@@ -1,0 +1,28 @@
+/ {
+	chosen {
+		zephyr,console = &cdc_acm_uart0;
+	};
+
+	aliases {
+		led0 = &green_led;
+		led1 = &orange_led;
+		sw0 = &user_button;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		green_led: led_0 {
+			gpios = <&gpiod 12 GPIO_ACTIVE_HIGH>;
+		};
+		orange_led: led_1 {
+			gpios = <&gpiod 13 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};
+
+&usbotg_fs {
+	status = "okay";
+	cdc_acm_uart0: cdc_acm_uart0 {
+		compatible = "zephyr,cdc-acm-uart";
+	};
+};
