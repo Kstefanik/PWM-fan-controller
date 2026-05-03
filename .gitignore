@@ -13,3 +13,6 @@ build
 # Ozone project files (generated or user-specific)
 firmware/debug/*.jdebug
 firmware/debug/*.jdebug.user
+
+# Python
+.venv

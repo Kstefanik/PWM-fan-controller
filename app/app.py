@@ -18,6 +18,7 @@ class App(QWidget):
         
         self.setWindowTitle("Endorfy Fan Control Panel")
         self.resize(850, 500)
+
         self.setStyleSheet("background-color: #1a1a1a; color: white; font-family: 'Segoe UI';")
 
         main_layout = QHBoxLayout()
@@ -106,10 +107,9 @@ class App(QWidget):
             self.read_data()
 
     def send_frame(self):
-        """PC -> STM32: Wysyłamy pełną ramkę, ale tylko TRG ma nową wartość"""
+        """PC -> STM32: Wysyłamy tylko wartość TRG"""
         if self.ser and self.ser.is_open:
-            # Utrzymujemy format ramki kolegi: T, R i D na zero (bo to pola dla STM32)
-            frame = f"T:0.00,R:0,D:0.0,TRG:{self.current_trg:.2f}\n"
+            frame = f"{self.current_trg:.2f}\n"
             self.ser.write(frame.encode())
 
     def read_data(self):
@@ -118,6 +118,7 @@ class App(QWidget):
             if self.ser.in_waiting > 0:
                 line = self.ser.readline().decode('utf-8', errors='ignore').strip()
                 
+                received_trg = None
                 parts = line.split(',')
                 for part in parts:
                     # Nadpisujemy pola pomiarowe
@@ -137,9 +138,19 @@ class App(QWidget):
                         else:
                             self.btn_status.setText("PRZYCISK BEZPIECZEŃSTWA: OK")
                             self.btn_status.setStyleSheet("background-color: #2ecc71; color: white; border-radius: 10px;")
+                    
+                    # Parsuj TRG aby sprawdzić czy się zgadza
+                    elif part.startswith("TRG:"):
+                        try:
+                            received_trg = float(part.split(':')[1])
+                        except:
+                            pass
                 
-                # UWAGA: Pole TRG w odebranej ramce ignorujemy, 
-                # żeby suwak na PC był jedynym źródłem prawdy dla nastawy.
+                # Sprawdź czy odebrana TRG się zgadza z aktualnym ustawieniem
+                # Jeśli się nie zgadza (np. reset STM32), prześlij wartość na nowo
+                if received_trg is not None and abs(received_trg - self.current_trg) > 0.1:
+                    self.send_frame()
+                
         except: 
             self.ser = None
             self.conn_label.setText("STATUS: ROZŁĄCZONO")

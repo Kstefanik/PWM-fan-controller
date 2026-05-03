@@ -63,6 +63,8 @@ void usb_tx_telemetry(const struct device *dev, struct sensor_data *s, struct ta
   char msg[128];
   int len = snprintf(msg, sizeof(msg), "T:%.2f,R:%d,D:%u,TRG:%.2f\r\n", (double)s->temp, t->rpm, p->duty, (double)c->target_temp);
 
+  LOG_INF("STM32 -> T:%.2f,R:%d,D:%u,TRG:%.2f", (double)s->temp, t->rpm, p->duty, (double)c->target_temp);
+
   if(len > 0) {
     for(int i = 0; i < len; i++) {
       uart_poll_out(dev, msg[i]);
@@ -85,6 +87,8 @@ float usb_rx_parse_float(const struct device *dev) {
         if(endptr == rx_buffer) {
           val = -1.0f;
         } else {
+          /* Log the received target temperature */
+          LOG_INF("PC -> New Target Temp: %.2f °C", (double)val);
           /* Formatting for terminal feedback */
           uart_poll_out(dev, '\r');
           uart_poll_out(dev, '\n');

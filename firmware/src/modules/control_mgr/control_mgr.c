@@ -104,8 +104,6 @@ static uint8_t run_pid_step(struct pid_state *state, const struct pid_config *cf
 
   float output = p_term + state->integral + d_term;
 
-  LOG_INF("PID Calc: T=%.2f SP=%.2f ERR=%.2f OUT=%.1f", (double)measured, (double)setpoint, (double)error, (double)output);
-
   return (uint8_t)CLAMP(output, cfg->min_output, cfg->max_output);
 }
 
