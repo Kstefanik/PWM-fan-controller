@@ -1,15 +1,4 @@
-/* --- Device Tree Root --- */
-
 / {
-	/* Fan Hardware Control */
-	fan_hw {
-		compatible = "gpio-leds";
-		fan_enable: fan_enable {
-			gpios = <&gpioa 9 GPIO_ACTIVE_HIGH>;
-			label = "Fan Power Enable";
-		};
-	};
-
 	/* Fan PWM & Tachometer Signals */
 	fan_signals {
 		compatible = "pwm-leds";
@@ -88,14 +77,12 @@
 		bias-pull-up;
 	};
 
-	/* I2C1 Serial Clock */
 	i2c1_scl_pb6: i2c1_scl_pb6 {
 		pinmux = <STM32_PINMUX('B', 6, AF4)>;
 		drive-open-drain;
 		bias-pull-up;
 	};
 
-	/* I2C1 Serial Data */
 	i2c1_sda_pb7: i2c1_sda_pb7 {
 		pinmux = <STM32_PINMUX('B', 7, AF4)>;
 		drive-open-drain;

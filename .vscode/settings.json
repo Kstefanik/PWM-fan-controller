@@ -53,6 +53,8 @@
     //     "editor.tabSize": 2
     // },
     // --- Python ---
+    "python.defaultInterpreterPath": "/opt/venv-python-intellisense/bin/python3",
+    "python.terminal.activateEnvironment": false,
     "[python]": {
         "editor.defaultFormatter": "ms-python.black-formatter",
     },

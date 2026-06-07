@@ -1,93 +1,119 @@
 {
-    "version": "2.0.0",
-    "tasks": [
-        // NUCLEO_L476RG
-        {
-            "label": "Build for L476RG: DEBUG",
-            "type": "shell",
-            "command": "west build -b nucleo_l476rg/stm32l476xx -d firmware/build/nucleo_l476rg firmware/ -- -DOVERLAY_CONFIG=debug.conf && cp firmware/build/nucleo_l476rg/compile_commands.json firmware/build/compile_commands.json",
-            "group": "build",
-            "problemMatcher": "$gcc"
-        },
-        {
-            "label": "Build for L476RG: DEBUG (Pristine)",
-            "type": "shell",
-            "command": "west build -b nucleo_l476rg/stm32l476xx -d firmware/build/nucleo_l476rg firmware/ -p always -- -DOVERLAY_CONFIG=debug.conf && cp firmware/build/nucleo_l476rg/compile_commands.json firmware/build/compile_commands.json",
-            "group": "build",
-            "problemMatcher": "$gcc"
-        },
-        {
-            "label": "Build for L476RG: Production (Pristine)",
-            "type": "shell",
-            "command": "west build -b nucleo_l476rg/stm32l476xx -d firmware/build/nucleo_l476rg firmware/ -p always -- -DOVERLAY_CONFIG=production.conf && cp firmware/build/nucleo_l476rg/compile_commands.json firmware/build/compile_commands.json",
-            "group": "build",
-            "problemMatcher": "$gcc"
-        },
-        // NUCLEO_F446ZE
-        {
-            "label": "Build for F446ZE: DEBUG",
-            "type": "shell",
-            "command": "west build -b nucleo_f446ze/stm32f446xx -d firmware/build/nucleo_f446ze firmware/ -- -DOVERLAY_CONFIG=debug.conf && cp firmware/build/nucleo_f446ze/compile_commands.json firmware/build/compile_commands.json",
-            "group": "build",
-            "problemMatcher": "$gcc"
-        },
-        {
-            "label": "Build for F446ZE: DEBUG (Pristine)",
-            "type": "shell",
-            "command": "west build -b nucleo_f446ze/stm32f446xx -d firmware/build/nucleo_f446ze firmware/ -p always -- -DOVERLAY_CONFIG=debug.conf && cp firmware/build/nucleo_f446ze/compile_commands.json firmware/build/compile_commands.json",
-            "group": "build",
-            "problemMatcher": "$gcc"
-        },
-        {
-            "label": "Build for F446ZE: Production (Pristine)",
-            "type": "shell",
-            "command": "west build -b nucleo_f446ze/stm32f446xx -d firmware/build/nucleo_f446ze firmware/ -p always -- -DOVERLAY_CONFIG=production.conf && cp firmware/build/nucleo_f446ze/compile_commands.json firmware/build/compile_commands.json",
-            "group": "build",
-            "problemMatcher": "$gcc"
-        },
-        // STM32F4_DISCO
-        {
-            "label": "Build for F407VGT6: DEBUG",
-            "type": "shell",
-            "command": "west build -b stm32f4_disco/stm32f407xx -d firmware/build/stm32f4_disco firmware/ -- -DOVERLAY_CONFIG=debug.conf && cp firmware/build/stm32f4_disco/compile_commands.json firmware/build/compile_commands.json",
-            "group": "build",
-            "problemMatcher": "$gcc"
-        },
-        {
-            "label": "Build for F407VGT6: DEBUG (Pristine)",
-            "type": "shell",
-            "command": "west build -b stm32f4_disco/stm32f407xx -d firmware/build/stm32f4_disco firmware/ -p always -- -DOVERLAY_CONFIG=debug.conf && cp firmware/build/stm32f4_disco/compile_commands.json firmware/build/compile_commands.json",
-            "group": "build",
-            "problemMatcher": "$gcc"
-        },
-        {
-            "label": "Build for F407VGT6: Production (Pristine)",
-            "type": "shell",
-            "command": "west build -b stm32f4_disco/stm32f407xx -d firmware/build/stm32f4_disco firmware/ -p always -- -DOVERLAY_CONFIG=production.conf && cp firmware/build/stm32f4_disco/compile_commands.json firmware/build/compile_commands.json",
-            "group": "build",
-            "problemMatcher": "$gcc"
-        },
-        // NUCLEO_H533RE
-        {
-            "label": "Build for H533RE: DEBUG",
-            "type": "shell",
-            "command": "west build -b nucleo_h533re/stm32h533xx -d firmware/build/nucleo_h533re firmware/ -- -DOVERLAY_CONFIG=debug.conf && cp firmware/build/nucleo_h533re/compile_commands.json firmware/build/compile_commands.json",
-            "group": "build",
-            "problemMatcher": "$gcc"
-        },
-        {
-            "label": "Build for H533RE: DEBUG (Pristine)",
-            "type": "shell",
-            "command": "west build -b nucleo_h533re/stm32h533xx -d firmware/build/nucleo_h533re firmware/ -p always -- -DOVERLAY_CONFIG=debug.conf && cp firmware/build/nucleo_h533re/compile_commands.json firmware/build/compile_commands.json",
-            "group": "build",
-            "problemMatcher": "$gcc"
-        },
-        {
-            "label": "Build for H533RE: Production (Pristine)",
-            "type": "shell",
-            "command": "west build -b nucleo_h533re/stm32h533xx -d firmware/build/nucleo_h533re firmware/ -p always -- -DOVERLAY_CONFIG=production.conf && cp firmware/build/nucleo_h533re/compile_commands.json firmware/build/compile_commands.json",
-            "group": "build",
-            "problemMatcher": "$gcc"
-        },
-    ]
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "West Build (Preset)",
+      "type": "shell",
+      "command": "west build -s . -d build/${input:presetSelect} -p auto -- --preset ${input:presetSelect} && cp build/${input:presetSelect}/compile_commands.json build/compile_commands.json",
+      "options": {
+        "cwd": "${workspaceFolder}/firmware"
+      },
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": [
+        "$gcc"
+      ],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true,
+        "panel": "shared",
+        "showReuseMessage": false,
+        "clear": true
+      }
+    },
+    {
+      "label": "West RAM Report",
+      "type": "shell",
+      "command": "west build -t ram_report -d build/${input:presetSelect}",
+      "options": {
+        "cwd": "${workspaceFolder}/firmware"
+      },
+      "group": "none",
+      "problemMatcher": []
+    },
+    {
+      "label": "West ROM Report",
+      "type": "shell",
+      "command": "west build -t rom_report -d build/${input:presetSelect}",
+      "options": {
+        "cwd": "${workspaceFolder}/firmware"
+      },
+      "group": "none",
+      "problemMatcher": []
+    },
+    {
+      "label": "Static Analysis: Logic & Standards - CodeChecker",
+      "type": "shell",
+      "command": "west build -p always -d build/${input:presetSelect}-codechecker -- --preset ${input:presetSelect} -DZEPHYR_SCA_VARIANT=codechecker \"-DCODECHECKER_ANALYZE_OPTS=--analyzers;clangsa;clang-tidy;cppcheck;gcc;--skip;${workspaceFolder}/firmware/codechecker.skip;--drop-reports-from-skipped-files\"",
+      "options": {
+        "cwd": "${workspaceFolder}/firmware"
+      },
+      "group": "none",
+      "problemMatcher": [],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true,
+        "panel": "shared",
+        "clear": false
+      }
+    },
+    {
+      "label": "Static Analysis: Devicetree - DT Doctor",
+      "type": "shell",
+      "command": "west build -p always -d build/${input:presetSelect}-dtdoctor -- --preset ${input:presetSelect} -DZEPHYR_SCA_VARIANT=dtdoctor",
+      "options": {
+        "cwd": "${workspaceFolder}/firmware"
+      },
+      "group": "none",
+      "problemMatcher": [],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true,
+        "panel": "shared",
+        "clear": false
+      }
+    },
+    {
+      "label": "Security: Harden Config Check",
+      "type": "shell",
+      "command": "west build -t hardenconfig -d build/${input:presetSelect}",
+      "options": {
+        "cwd": "${workspaceFolder}/firmware"
+      },
+      "group": "none",
+      "problemMatcher": [],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true,
+        "panel": "shared",
+        "clear": false
+      }
+    }
+  ],
+  "inputs": [
+    {
+      "id": "presetSelect",
+      "type": "pickString",
+      "description": "Select the target board and build type",
+      "options": [
+        "nucleo_h533re-debug",
+        "nucleo_h533re-prod",
+        "nucleo_l476rg-debug",
+        "nucleo_l476rg-prod",
+        "nucleo_f446ze-debug",
+        "nucleo_f446ze-prod",
+        "stm32f4_disco-debug",
+        "stm32f4_disco-prod",
+        "native_sim-debug",
+        "native_sim-prod"
+      ],
+      "default": "nucleo_h533re-debug"
+    }
+  ]
 }

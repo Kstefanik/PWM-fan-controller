@@ -5,10 +5,7 @@ services:
       dockerfile: .devcontainer/Dockerfile
       
     volumes:      
-      # Mount your local project into the workspace
       - ..:/workdir/PWM-fan-controller:cached
-      
-      # Create a persistent volume for the build cache
       - zephyr-ccache:/home/user/.ccache
 
     environment:

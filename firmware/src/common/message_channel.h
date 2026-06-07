@@ -5,8 +5,8 @@
  * Defines the data types and ZBus channels used for communication between modules
  * such as sensor, tacho, control, and PID in the PWM fan controller project.
  */
-#ifndef _MESSAGE_CHANNEL_H_
-#define _MESSAGE_CHANNEL_H_
+#ifndef MESSAGE_CHANNEL_H
+#define MESSAGE_CHANNEL_H
 
 #include <zephyr/zbus/zbus.h>
 
@@ -14,27 +14,27 @@
  * @brief Temperature sensor data structure.
  */
 struct sensor_data {
-  float temp;
-  bool is_valid;
+	float temp;
+	bool is_valid;
 };
 /**
  * @brief Tachometer data structure.
  */
 struct tacho_data {
-  uint16_t rpm;
-  bool is_valid;
+	uint16_t rpm;
+	bool is_valid;
 };
 /**
  * @brief Control data structure for target temperature.
  */
 struct control_data {
-  float target_temp;
+	float target_temp;
 };
 /**
  * @brief PID controller output data structure.
  */
 struct pid_data {
-  uint8_t duty;
+	uint8_t duty;
 };
 
 /**
@@ -47,4 +47,4 @@ struct pid_data {
  */
 ZBUS_CHAN_DECLARE(temp_chan, rpm_chan, control_chan, duty_chan);
 
-#endif /* _MESSAGE_CHANNEL_H_ */
+#endif /* MESSAGE_CHANNEL_H */

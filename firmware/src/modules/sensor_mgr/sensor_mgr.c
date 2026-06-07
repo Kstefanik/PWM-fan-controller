@@ -5,7 +5,6 @@
  * This module handles periodic polling of a temperature sensor and publishes
  * the results to a ZBus channel for use by other system components.
  */
-#include <zephyr/device.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
@@ -29,25 +28,26 @@ static const struct device *const temp_dev = DEVICE_DT_GET(SENSOR_NODE);
  * @retval 0 Success
  * @retval <0 Negative error code from sensor API
  */
-static int read_sensor_data(struct sensor_data *data) {
-  int ret;
-  struct sensor_value raw;
+static int read_sensor_data(struct sensor_data *data)
+{
+	int ret;
+	struct sensor_value raw;
 
-  ret = sensor_sample_fetch(temp_dev);
-  if(ret < 0) {
-    LOG_ERR("Failed to fetch temperature: %d", ret);
-    return ret;
-  }
+	ret = sensor_sample_fetch(temp_dev);
+	if (ret < 0) {
+		LOG_ERR("Failed to fetch temperature: %d", ret);
+		return ret;
+	}
 
-  ret = sensor_channel_get(temp_dev, SENSOR_CHAN_AMBIENT_TEMP, &raw);
-  if(ret < 0) {
-    LOG_ERR("Failed to get sensor channel: %d", ret);
-    return ret;
-  }
+	ret = sensor_channel_get(temp_dev, SENSOR_CHAN_AMBIENT_TEMP, &raw);
+	if (ret < 0) {
+		LOG_ERR("Failed to get sensor channel: %d", ret);
+		return ret;
+	}
 
-  data->temp = (float)sensor_value_to_double(&raw);
-  data->is_valid = true;
-  return 0;
+	data->temp = (float)sensor_value_to_double(&raw);
+	data->is_valid = true;
+	return 0;
 }
 
 /**
@@ -60,41 +60,43 @@ static int read_sensor_data(struct sensor_data *data) {
  * @param p2 Unused
  * @param p3 Unused
  */
-static void sensor_mgr_entry(void *p1, void *p2, void *p3) {
-  ARG_UNUSED(p1);
-  ARG_UNUSED(p2);
-  ARG_UNUSED(p3);
+static void sensor_mgr_entry(void *p1, void *p2, void *p3)
+{
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
 
-  int ret;
+	int ret;
 
-  if(!device_is_ready(temp_dev)) {
-    LOG_ERR("Sensor not ready");
-    return;
-  }
+	if (!device_is_ready(temp_dev)) {
+		LOG_ERR("Sensor not ready");
+		return;
+	}
 
-  /* Give sensor internal logic time to stabilize post-init */
-  k_msleep(500);
+	/* Give sensor internal logic time to stabilize post-init */
+	k_msleep(500);
 
-  LOG_INF("Sensor manager started");
+	LOG_INF("Sensor manager started");
 
-  while(1) {
-    struct sensor_data msg = {.temp = CONFIG_DEFAULT_TEMP, .is_valid = false};
+	while (1) {
+		struct sensor_data msg = {.temp = CONFIG_DEFAULT_TEMP, .is_valid = false};
 
-    ret = read_sensor_data(&msg);
-    if(ret < 0) {
-      LOG_ERR("Sensor read failed: %d", ret);
-    }
+		ret = read_sensor_data(&msg);
+		if (ret < 0) {
+			LOG_ERR("Sensor read failed: %d", ret);
+		}
 
-    ret = zbus_chan_pub(&temp_chan, &msg, K_MSEC(10));
-    if(ret < 0) {
-      LOG_ERR("ZBus temp chan pub failed: %d", ret);
-    }
+		ret = zbus_chan_pub(&temp_chan, &msg, K_MSEC(10));
+		if (ret < 0) {
+			LOG_ERR("ZBus temp chan pub failed: %d", ret);
+		}
 
-    k_msleep(CONFIG_SENSOR_POLL_INTERVAL_MS);
-  }
+		k_msleep(CONFIG_SENSOR_POLL_INTERVAL_MS);
+	}
 }
 
 /**
  * @brief Define and start the sensor manager thread.
  */
-K_THREAD_DEFINE(sensor_mgr_id, CONFIG_SENSOR_MGR_STACK_SIZE, sensor_mgr_entry, NULL, NULL, NULL, CONFIG_SENSOR_MGR_PRIORITY, 0, 0);
+K_THREAD_DEFINE(sensor_mgr_id, CONFIG_SENSOR_MGR_STACK_SIZE, sensor_mgr_entry, NULL, NULL, NULL,
+		CONFIG_SENSOR_MGR_PRIORITY, 0, 0);

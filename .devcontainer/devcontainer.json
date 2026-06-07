@@ -7,10 +7,12 @@
         "vscode": {
             "extensions": [
                 "llvm-vs-code-extensions.vscode-clangd",
-                "ms-vscode.cpptools-extension-pack",
+                "ms-vscode.cpptools",
                 "eamodio.gitlens",
                 "nordic-semiconductor.nrf-connect-extension-pack",
+                "ms-python.python",
                 "ms-python.black-formatter",
+                "ms-python.vscode-pylance",
                 "wysaid.clion-cmake-format"
             ]
         }

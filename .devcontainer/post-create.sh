@@ -1,38 +1,24 @@
 #!/usr/bin/env bash
-set -euo pipefail
 
-# Resolve workspace from this script location: <workspace>/.devcontainer/post-create.sh
-WORKSPACE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-MANIFEST_DIR="firmware"
-MANIFEST_FILE="west.yml"
+WORKSPACE="/workdir/PWM-fan-controller"
 
 run() {
   echo "+ $*"
   "$@"
 }
 
-cd "$WORKSPACE"
-
-# Add safe.directory only if it is missing.
-if ! git config --global --get-all safe.directory 2>/dev/null | grep -Fxq "$WORKSPACE"; then
-  run git config --global --add safe.directory "$WORKSPACE"
-fi
-
-# Ensure this repository is its own west topdir (T1 layout).
-# A parent .west can be detected and cause the local setup to be skipped.
+# Initailze west workspace and update west
 if [ ! -d "$WORKSPACE/.west" ]; then
-  # run west init -l "$WORKSPACE/$MANIFEST_DIR" "$WORKSPACE"
-  run west init -l "$WORKSPACE/$MANIFEST_DIR"
-fi
-
-run west config --local manifest.path "$MANIFEST_DIR"
-run west config --local manifest.file "$MANIFEST_FILE"
-
-if [ "$(west topdir)" != "$WORKSPACE" ]; then
-  echo "ERROR: west topdir is '$(west topdir)', expected '$WORKSPACE'"
-  echo "Hint: remove or reconfigure parent workspace metadata (for example /workdir/.west)."
-  exit 1
+  run west init -l "$WORKSPACE/firmware"
+else
+  echo "Workspace already initialized, skipping..."
 fi
 
 run west update
 run west zephyr-export
+
+# Install PC app requirements for in-container intellisense
+run /opt/venv-python-intellisense/bin/pip install --no-cache-dir -r /workdir/PWM-fan-controller/app/requirements.txt
+
+# Correct eventual permission errors for ccache
+run sudo chown -R user:user /home/user/.ccache

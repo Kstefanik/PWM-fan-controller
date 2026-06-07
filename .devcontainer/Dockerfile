@@ -1,22 +1,29 @@
 FROM ghcr.io/zephyrproject-rtos/zephyr-build:main
 
-# Switch to root to install packages and manage system directories
 USER root
 
-# Install basic tools, USB support, OpenOCD, ST-Link, and X11/GUI dependencies for Ozone
 RUN apt-get update && apt-get install -y \
-    wget \
-    curl \
-    unzip \
     clangd \
+    clang \
+    clang-tidy \
+    cppcheck \
+    python3-venv \
     && rm -rf /var/lib/apt/lists/*
 
-# Pre-create the workdir and ensure the non-root 'user' owns it
-# This prevents the named volume from defaulting to root ownership
+# Pre-create workdir with the right owner
 RUN mkdir -p /workdir && chown -R user:user /workdir
 
-# Switch back to the default user in the Zephyr base image
+#Install required python packages
+RUN pip3 install --no-cache-dir codechecker
+RUN pip3 install --no-cache-dir "zcbor==0.9.1"
+RUN pip3 install --no-cache-dir "cbor2<6.0.0" # required for zcbor 0.9.1
+
+# Create python venv dir for in-container intellisense for PC app
+RUN mkdir -p /opt/venv-python-intellisense && chown -R user:user /opt/venv-python-intellisense
+
 USER user
 
-# Set the default working directory
+# Create venv for PC app intellisense
+RUN python3 -m venv /opt/venv-python-intellisense
+
 WORKDIR /workdir/PWM-fan-controller

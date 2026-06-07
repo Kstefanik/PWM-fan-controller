@@ -8,8 +8,7 @@
 #ifndef USB_HANDLERS_H
 #define USB_HANDLERS_H
 
-#include "message_channel.h" // For your data structs
-#include <zephyr/device.h>
+#include "message_channel.h"
 
 /**
  * @brief Initialize USB stack and UART interrupts.
@@ -41,7 +40,8 @@ void usb_wait_for_host(const struct device *dev);
  * @param p Pointer to PID data.
  * @param c Pointer to control data.
  */
-void usb_tx_telemetry(const struct device *dev, struct sensor_data *s, struct tacho_data *t, struct pid_data *p, struct control_data *c);
+void usb_tx_telemetry(const struct device *dev, struct sensor_data *s, struct tacho_data *t,
+		      struct pid_data *p, struct control_data *c);
 
 /**
  * @brief Parse the RX buffer for a float value.
@@ -54,4 +54,4 @@ void usb_tx_telemetry(const struct device *dev, struct sensor_data *s, struct ta
  */
 float usb_rx_parse_float(const struct device *dev);
 
-#endif
+#endif /* USB_HANDLERS_H */
