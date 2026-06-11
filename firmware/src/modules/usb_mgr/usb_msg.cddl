@@ -1,0 +1,19 @@
+;usb_msg.cddl
+
+; --- DEVICE TO HOST (Upstream) ---
+Telemetry = [
+    temp: float32,
+    rpm: int,
+    duty: uint,
+    target_temp: float32
+]
+
+; --- HOST TO DEVICE (Downstream) ---
+Command = {
+    CommandType
+}
+
+CommandType = (
+    cmd_set_target_temp: 1 => float32 //
+    cmd_enter_debug_mode:  2 => null
+)

@@ -25,6 +25,41 @@
       }
     },
     {
+      "label": "ZCBOR: Regenerate USB Schema",
+      "type": "shell",
+      "command": "zcbor",
+      "args": [
+        "code",
+        "--decode",
+        "--encode",
+        "--short-names",
+        "-c",
+        "usb_msg.cddl",
+        "-t",
+        "Telemetry",
+        "Command",
+        "--output-c",
+        "generated/usb_msg.c",
+        "--output-h",
+        "generated/usb_msg.h",
+        "--output-h-types",
+        "generated/usb_msg_types.h"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}/firmware/src/modules/usb_mgr"
+      },
+      "presentation": {
+        "echo": true,
+        "reveal": "silent",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": false,
+        "clear": false
+      },
+      "problemMatcher": [],
+      "group": "none"
+    },
+    {
       "label": "West RAM Report",
       "type": "shell",
       "command": "west build -t ram_report -d build/${input:presetSelect}",
