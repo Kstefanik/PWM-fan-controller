@@ -48,7 +48,7 @@ static void process_telemetry_tx_event()
 {
 	if (!usb_is_host_connected(usb_dev)) {
 	  LOG_ERR("Host disconnected, skipping telemetry transmission");
-    k_sleep()
+    k_msleep(100);
 	  return;
 	}
 
