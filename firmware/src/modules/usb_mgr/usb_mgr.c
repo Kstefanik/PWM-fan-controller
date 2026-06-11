@@ -13,12 +13,13 @@
 
 #include "message_channel.h"
 #include "usb_handlers.h"
+#include "usb_msg_types.h"
 
 LOG_MODULE_REGISTER(usb_mgr, LOG_LEVEL_INF);
 
 /* --- Synchronisation --- */
 K_SEM_DEFINE(telemetry_tx_sem, 0, 1);
-K_SEM_DEFINE(data_rx_sem, 0, 1);
+K_SEM_DEFINE(cmd_rx_sem, 0, 1);
 
 /* Timer triggers every 500ms to signal a telemetry update */
 /**
@@ -39,27 +40,33 @@ const struct device *const usb_dev = DEVICE_DT_GET_ONE(zephyr_cdc_acm_uart);
 /**
  * @brief Fetch and transmit latest telemetry data over USB.
  *
- * Reads the latest sensor, tacho, and PID data from ZBus channels and sends
+ * Reads the latest sensor, tacho, PID and control data from ZBus channels and sends
  * them over USB to the host. Logs a warning if any channel read fails.
  *
- * @param ctrl Pointer to current control data.
  */
-static void process_telemetry_event(struct control_data *ctrl)
+static void process_telemetry_tx_event()
 {
+	if (!usb_is_host_connected(usb_dev)) {
+	  LOG_ERR("Host disconnected, skipping telemetry transmission");
+    k_sleep()
+	  return;
+	}
+
 	struct sensor_data s;
 	struct tacho_data t;
 	struct pid_data p;
+	struct control_data c;
 
-	/* Read latest snapshots from channels */
 	int ret = 0;
 	ret |= zbus_chan_read(&temp_chan, &s, K_MSEC(10));
 	ret |= zbus_chan_read(&rpm_chan, &t, K_MSEC(10));
 	ret |= zbus_chan_read(&duty_chan, &p, K_MSEC(10));
+	ret |= zbus_chan_read(&control_chan, &c, K_MSEC(10));
 
-	if (ret == 0) {
-		usb_tx_telemetry(usb_dev, &s, &t, &p, ctrl);
-	} else {
+	if (ret < 0) {
 		LOG_WRN("Failed to read one or more ZBus channels");
+	} else {
+		usb_tx_telemetry(usb_dev, &s, &t, &p, &c);
 	}
 }
 
@@ -67,24 +74,42 @@ static void process_telemetry_event(struct control_data *ctrl)
  * @brief Handle incoming serial data and publish updates to ZBus.
  *
  * Parses a new target temperature from the USB input and publishes it to the
- * control channel if valid. Re-enables UART RX interrupts after processing.
+ * control channel. Re-enables UART RX interrupts after processing.
  *
- * @param ctrl Pointer to current control data (updated in-place).
  */
-static void process_rx_event(struct control_data *ctrl)
+static void process_cmd_rx_event(void)
 {
-	float new_temp = usb_rx_parse_float(usb_dev);
+	int ret;
+	struct Command cmd = {0};
+	struct control_data ctrl;
 
-	/* Only publish if we got a valid command (positive float) */
-	if (new_temp >= 0) {
-		ctrl->target_temp = new_temp;
-		if (zbus_chan_pub(&control_chan, ctrl, K_NO_WAIT) != 0) {
-			LOG_ERR("ZBus publish failed");
-		}
+	ret = usb_rx_cmd(usb_dev, &cmd);
+	if (ret != 0) {
+		LOG_ERR("RX command error: %d", ret);
+    k_msleep(100);
+		return;
 	}
 
-	/* Re-enable interrupts after buffer processing is complete */
-	uart_irq_rx_enable(usb_dev);
+	switch (cmd.CommandType_m.CommandType_choice) {
+	case CommandType_cmd_set_target_temp_c:
+		ctrl.target_temp = cmd.CommandType_m.cmd_set_target_temp;
+
+		LOG_INF("New target temp = %.2f", (double)ctrl.target_temp);
+
+		ret = zbus_chan_pub(&control_chan, &ctrl, K_NO_WAIT);
+		if (ret < 0) {
+			LOG_ERR("ZBus publish failed: %d", ret);
+		}
+		break;
+
+	case CommandType_cmd_enter_debug_mode_c:
+		LOG_INF("Entering debug mode...");
+		break;
+
+	default:
+		LOG_WRN("Unknown command choice: %d", cmd.CommandType_m.CommandType_choice);
+		break;
+	}
 }
 
 /**
@@ -96,19 +121,21 @@ static void process_rx_event(struct control_data *ctrl)
  */
 static void usb_mgr_entry(void)
 {
-	struct control_data current_control = {.target_temp = CONFIG_DEFAULT_TARGET_TEMP};
+	int ret;
 
 	struct k_poll_event events[] = {
 		K_POLL_EVENT_STATIC_INITIALIZER(K_POLL_TYPE_SEM_AVAILABLE, K_POLL_MODE_NOTIFY_ONLY,
 						&telemetry_tx_sem, 0),
 		K_POLL_EVENT_STATIC_INITIALIZER(K_POLL_TYPE_SEM_AVAILABLE, K_POLL_MODE_NOTIFY_ONLY,
-						&data_rx_sem, 0),
+						&cmd_rx_sem, 0),
 	};
 
 	/* Initialize hardware transport and wait for DTR (terminal connection) */
-	if (usb_transport_init(usb_dev, &data_rx_sem) != 0) {
+	ret = usb_init(usb_dev, &cmd_rx_sem);
+	if (ret < 0) {
 		return;
 	}
+
 	usb_wait_for_host(usb_dev);
 
 	/* Signal system and start the 500ms telemetry heartbeat */
@@ -117,18 +144,18 @@ static void usb_mgr_entry(void)
 	LOG_INF("USB Manager started");
 
 	while (1) {
-		/* Wait for either timer (Telemetry) or IRQ (Data RX) */
+		/* Wait for either Telemetry timer or Data from USB */
 		k_poll(events, ARRAY_SIZE(events), K_FOREVER);
 
 		if (events[0].state == K_POLL_STATE_SEM_AVAILABLE) {
 			k_sem_take(&telemetry_tx_sem, K_NO_WAIT);
-			process_telemetry_event(&current_control);
+			process_telemetry_tx_event();
 			events[0].state = K_POLL_STATE_NOT_READY;
 		}
 
 		if (events[1].state == K_POLL_STATE_SEM_AVAILABLE) {
-			k_sem_take(&data_rx_sem, K_NO_WAIT);
-			process_rx_event(&current_control);
+			k_sem_take(&cmd_rx_sem, K_NO_WAIT);
+			process_cmd_rx_event();
 			events[1].state = K_POLL_STATE_NOT_READY;
 		}
 	}
