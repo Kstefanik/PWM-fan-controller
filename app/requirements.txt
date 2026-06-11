@@ -1,2 +1,4 @@
 pyserial
-PyQt5
+cbor2
+cobs
+customtkinter
