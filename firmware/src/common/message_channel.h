@@ -5,8 +5,8 @@
  * Defines the data types and ZBus channels used for communication between modules
  * such as sensor, tacho, control, and PID in the PWM fan controller project.
  */
-#ifndef MESSAGE_CHANNEL_H
-#define MESSAGE_CHANNEL_H
+#ifndef MESSAGE_CHANNEL_H__
+#define MESSAGE_CHANNEL_H__
 
 #include <zephyr/zbus/zbus.h>
 
@@ -47,4 +47,4 @@ struct pid_data {
  */
 ZBUS_CHAN_DECLARE(temp_chan, rpm_chan, control_chan, duty_chan);
 
-#endif /* MESSAGE_CHANNEL_H */
+#endif /* MESSAGE_CHANNEL_H__ */

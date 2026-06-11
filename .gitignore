@@ -16,3 +16,4 @@ firmware/debug/*.jdebug.user
 
 # Python
 .venv
+__pycache__
