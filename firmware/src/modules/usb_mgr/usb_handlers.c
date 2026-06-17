@@ -1,10 +1,3 @@
-#/**
- * @file usb_handlers.c
- * @brief USB CDC ACM handlers for UART and telemetry/control communication.
- *
- * Implements USB transport initialization, host wait, telemetry transmission,
- * and float parsing for a Zephyr-based USB CDC ACM interface.
- */
 #include <stdio.h>
 #include <stdlib.h>
 #include <zephyr/drivers/uart.h>
@@ -37,6 +30,8 @@ static struct cobs_decoder dec;
 
 static int cobs_decoder_cb(const uint8_t *buf, size_t len, void *user_data)
 {
+	ARG_UNUSED(user_data);
+
 	if (buf == NULL) {
 		/* NULL = end of COBS frame */
 		k_sem_give(rx_sem);
@@ -89,7 +84,7 @@ static void interrupt_handler(const struct device *dev, void *user_data)
 		/* Handle transmiting data */
 		if (uart_irq_tx_ready(dev)) {
 			uint8_t buffer[64];
-			int rb_len, send_len;
+			size_t rb_len, send_len;
 
 			rb_len = ring_buf_get(&tx_ringbuf, buffer, sizeof(buffer));
 			if (!rb_len) {
@@ -140,27 +135,15 @@ int usb_init(const struct device *dev, struct k_sem *sem)
 	k_msleep(100);
 
 	uart_irq_callback_set(dev, interrupt_handler);
-	/* Enable rx interrupts */
 	uart_irq_rx_enable(dev);
 
 	return 0;
 }
 
-void usb_wait_for_host(const struct device *dev)
-{
-	uint32_t dtr = 0;
-	while (!dtr) {
-		uart_line_ctrl_get(dev, UART_LINE_CTRL_DTR, &dtr);
-		k_msleep(100);
-	}
-	LOG_INF("Terminal connected!");
-}
-
-bool usb_is_host_connected(const struct device *dev)
+static bool usb_is_host_connected(const struct device *dev)
 {
 	uint32_t dtr = 0;
 
-	/* Fetch current DTR state. Returns 0 on success. */
 	if (uart_line_ctrl_get(dev, UART_LINE_CTRL_DTR, &dtr) == 0) {
 		return (dtr != 0);
 	}
@@ -175,13 +158,12 @@ static int usb_send_data(const struct device *dev, const uint8_t *buf, size_t le
 		return 0;
 	}
 
-	int rb_len = ring_buf_put(&tx_ringbuf, buf, len);
+	size_t rb_len = ring_buf_put(&tx_ringbuf, buf, len);
 
 	if (rb_len < len) {
 		LOG_ERR("TX Ring Buffer full! Dropped %d bytes", (int)(len - rb_len));
 	}
 
-	// Enable TX interrupt so the hardware starts sending
 	uart_irq_tx_enable(dev);
 
 	return rb_len;
@@ -195,8 +177,9 @@ static int cobs_encoder_cb(const uint8_t *buf, size_t len, void *user_data)
 	return 0;
 }
 
-void usb_tx_telemetry(const struct device *dev, struct sensor_data *s, struct tacho_data *t,
-		      struct pid_data *p, struct control_data *c)
+void usb_tx_telemetry(const struct device *dev, const struct sensor_data *s,
+		      const struct tacho_data *t, const struct pid_data *p,
+		      const struct control_data *c, const int state)
 {
 	int ret;
 	uint8_t cbor_buf[32];
@@ -208,6 +191,7 @@ void usb_tx_telemetry(const struct device *dev, struct sensor_data *s, struct ta
 		.rpm = t->rpm,
 		.duty = p->duty,
 		.target_temp = c->target_temp,
+		.system_state = state,
 	};
 
 	ret = cbor_encode_Telemetry(cbor_buf, sizeof(cbor_buf), &tx_data, &encoded_len);
@@ -237,13 +221,15 @@ void usb_tx_telemetry(const struct device *dev, struct sensor_data *s, struct ta
 	}
 }
 
-static int usb_read_data(const struct device *dev, uint8_t *buf, size_t len)
+static size_t usb_read_data(const struct device *dev, uint8_t *buf, size_t len)
 {
+	ARG_UNUSED(dev);
+
 	size_t copy_len = MIN(len, frame_len);
 	memcpy(buf, frame_buf, copy_len);
 	frame_len = 0;
 
-	return (int)copy_len;
+	return copy_len;
 }
 
 int usb_rx_cmd(const struct device *dev, struct Command *cmd)
@@ -251,14 +237,14 @@ int usb_rx_cmd(const struct device *dev, struct Command *cmd)
 	int ret;
 	uint8_t cbor_buf[FRAME_BUF_SIZE];
 
-	int len = usb_read_data(dev, cbor_buf, sizeof(cbor_buf));
+	size_t len = usb_read_data(dev, cbor_buf, sizeof(cbor_buf));
 	if (len <= 0) {
 		LOG_ERR("Failed to read frame data");
 		return -EIO;
 	}
 
-	LOG_INF("COBS decoding successful! Raw CBOR payload length: %d bytes", len);
-	LOG_HEXDUMP_INF(cbor_buf, len, "Raw CBOR Buffer Payload:");
+	LOG_DBG("COBS decoding successful! Raw CBOR payload length: %d bytes", len);
+	LOG_HEXDUMP_DBG(cbor_buf, len, "Raw CBOR Buffer Payload:");
 
 	ret = cbor_decode_Command(cbor_buf, len, cmd, NULL);
 	if (ret != 0) {

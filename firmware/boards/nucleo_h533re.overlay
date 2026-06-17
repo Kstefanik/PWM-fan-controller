@@ -68,7 +68,7 @@
 	/* Timer 3, Channel 1 (PWM) */
 	tim3_ch1_pb4: tim3_ch1_pb4 {
 		pinmux = <STM32_PINMUX('B', 4, AF2)>;
-		bias-pull-up;
+		drive-open-drain;
 	};
 
 	/* Timer 2, Channel 1 (Tachometer) */

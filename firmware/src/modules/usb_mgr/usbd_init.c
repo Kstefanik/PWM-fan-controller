@@ -1,10 +1,3 @@
-#/**
- * @file usbd_init.c
- * @brief USB device initialization implementation for Zephyr-based projects.
- *
- * Provides the implementation for initializing a USB device context, adding descriptors,
- * registering classes and callbacks, and starting the USB device.
- */
 #include <zephyr/logging/log.h>
 #include <zephyr/usb/usbd.h>
 
