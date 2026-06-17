@@ -1,11 +1,3 @@
-#/**
- * @file control_mgr.c
- * @brief Control manager module for fan speed regulation using PID control.
- *
- * This module manages fan speed based on temperature readings using a PID controller.
- * It subscribes to ZBus channels for sensor and control data, applies PID logic,
- * and sets the fan PWM duty cycle accordingly.
- */
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/pwm.h>
 #include <zephyr/kernel.h>
@@ -13,6 +5,7 @@
 #include <zephyr/zbus/zbus.h>
 
 #include "message_channel.h"
+#include "system_state.h"
 
 LOG_MODULE_REGISTER(control_mgr, LOG_LEVEL_INF);
 
@@ -24,9 +17,6 @@ ZBUS_SUBSCRIBER_DEFINE(control_mgr, CONFIG_ZBUS_QUEUE_SIZE);
 #define FAN_PWM_NODE DT_NODELABEL(fan_pwm)
 static const struct pwm_dt_spec fan_pwm = PWM_DT_SPEC_GET(FAN_PWM_NODE);
 
-/**
- * @brief PID controller configuration parameters.
- */
 struct pid_config {
 	float kp;             /**< Proportional gain */
 	float ki;             /**< Integral gain */
@@ -37,9 +27,6 @@ struct pid_config {
 	float integral_limit; /**< Clamp for integral term */
 };
 
-/**
- * @brief PID controller runtime state.
- */
 struct pid_state {
 	float integral;   /**< Accumulated integral value */
 	float last_error; /**< Previous error value */
@@ -54,16 +41,6 @@ static const struct pid_config fan_pid_cfg = {.kp = 25.0f,
 					      .max_output = 100.0f,
 					      .integral_limit = 40.0f};
 
-/**
- * @brief Apply the specified fan speed as a PWM duty cycle.
- *
- * Sets the PWM output to control the fan speed.
- *
- * @param duty_percent Duty cycle percentage (0-100).
- *
- * @retval 0 Success
- * @retval <0 Negative error code from PWM API
- */
 static int apply_fan_speed(uint8_t duty_percent)
 {
 	int ret;
@@ -77,18 +54,6 @@ static int apply_fan_speed(uint8_t duty_percent)
 	return 0;
 }
 
-/**
- * @brief Perform a single PID control step.
- *
- * Calculates the new control output based on the setpoint and measured value.
- *
- * @param state Pointer to PID state structure (updated in-place).
- * @param cfg Pointer to PID configuration.
- * @param setpoint Desired target value.
- * @param measured Current measured value.
- *
- * @return Clamped output value (duty cycle percent).
- */
 static uint8_t run_pid_step(struct pid_state *state, const struct pid_config *cfg, float setpoint,
 			    float measured)
 {
@@ -112,16 +77,73 @@ static uint8_t run_pid_step(struct pid_state *state, const struct pid_config *cf
 	return (uint8_t)CLAMP(output, cfg->min_output, cfg->max_output);
 }
 
-/**
- * @brief Control manager thread entry point.
- *
- * Waits for new sensor/control data, runs the PID loop, and updates the fan speed.
- * Handles hardware initialization and ZBus communication.
- *
- * @param p1 Unused
- * @param p2 Unused
- * @param p3 Unused
- */
+static void calibrate_pid()
+{
+	// Simulate performing pid calibration
+	k_sleep(K_SECONDS(5));
+	system_state_post_event(SYSTEM_EVENT_DONE);
+}
+
+static void process_pid_cal_chan_msg()
+{
+	if (system_state_get() != SYSTEM_STATE_PID_CAL) {
+		LOG_WRN("Pid calibration cmd received not in SYSTEM_STATE_PID_CAL");
+		return;
+	}
+
+	calibrate_pid();
+}
+
+static void process_duty_override_chan_msg(struct pid_data *duty_msg)
+{
+	int ret;
+
+	struct pid_data override_data;
+	ret = zbus_chan_read(&duty_override_chan, &override_data, K_MSEC(10));
+
+	if (ret == 0 && system_state_get() == SYSTEM_STATE_SELF_TEST) {
+		// Apply the manual speed directly to hardware
+		ret = apply_fan_speed(override_data.duty);
+		if (ret < 0) {
+			LOG_ERR("Failed to apply fan speed:  %d", ret);
+		}
+
+		duty_msg->duty = override_data.duty;
+		ret = zbus_chan_pub(&duty_chan, duty_msg, K_MSEC(10));
+		if (ret < 0) {
+			LOG_ERR("ZBus duty chan publish failed: %d", ret);
+		}
+	}
+}
+
+static void process_temp_chan_msg(struct sensor_data *current_sensor,
+				  struct control_data *current_control, struct pid_data *duty_msg,
+				  struct pid_state *fan_pid)
+{
+	int ret;
+
+	ret = zbus_chan_read(&temp_chan, current_sensor, K_MSEC(10));
+	if (ret < 0) {
+		LOG_ERR("ZBus temp read failed: %d", ret);
+		return;
+	}
+
+	ret = zbus_chan_read(&control_chan, current_control, K_MSEC(10));
+	if (ret < 0) {
+		LOG_ERR("ZBus control read failed: %d", ret);
+	}
+
+	if (system_state_get() == SYSTEM_STATE_NORMAL) {
+		duty_msg->duty = run_pid_step(fan_pid, &fan_pid_cfg, current_control->target_temp,
+					      current_sensor->temp);
+		apply_fan_speed(duty_msg->duty);
+		ret = zbus_chan_pub(&duty_chan, duty_msg, K_MSEC(10));
+		if (ret < 0) {
+			LOG_ERR("ZBus duty chan publish failed: %d", ret);
+		}
+	}
+}
+
 static void control_mgr_entry(void *p1, void *p2, void *p3)
 {
 	ARG_UNUSED(p1);
@@ -130,10 +152,10 @@ static void control_mgr_entry(void *p1, void *p2, void *p3)
 
 	int ret;
 
-	struct sensor_data current_sensor = {.temp = CONFIG_DEFAULT_TEMP, .is_valid = false};
+	struct sensor_data current_sensor = {.temp = CONFIG_DEFAULT_TEMP};
 	struct control_data current_control = {.target_temp = CONFIG_DEFAULT_TARGET_TEMP};
-	struct pid_state fan_pid = {.initialized = false};
 	struct pid_data duty_msg = {.duty = CONFIG_DEFAULT_DUTY};
+	struct pid_state fan_pid = {.initialized = false};
 	const struct zbus_channel *chan;
 
 	if (!pwm_is_ready_dt(&fan_pwm)) {
@@ -141,46 +163,32 @@ static void control_mgr_entry(void *p1, void *p2, void *p3)
 		return;
 	}
 
-	LOG_INF("Control manager started");
-
 	while (1) {
 		ret = zbus_sub_wait(&control_mgr, &chan, K_MSEC(3000));
-		if (ret < 0) {
+		if (ret == -EAGAIN) {
+			// ONLY apply failsafe if we are actively trying to regulate in NORMAL mode
+			if (system_state_get() == SYSTEM_STATE_NORMAL) {
+				LOG_WRN("Sensor timeout - applying failsafe duty");
+				apply_fan_speed(FAILSAFE_DUTY);
+			}
+			continue;
+		} else if (ret < 0) {
 			LOG_ERR("ZBus sub wait failed: %d", ret);
-		} else {
-			/* Trigger event for PID loop is new temperature reading */
-			if (chan == &temp_chan) {
-				ret = zbus_chan_read(&temp_chan, &current_sensor, K_MSEC(10));
-				if (ret < 0) {
-					LOG_ERR("ZBus temp chan read failed: %d", ret);
-				}
-				ret = zbus_chan_read(&control_chan, &current_control, K_MSEC(10));
-				if (ret < 0) {
-					LOG_ERR("ZBus control chan read failed: %d", ret);
-				}
-			}
+			continue;
+		}
 
-			if (current_sensor.is_valid) {
-				duty_msg.duty = run_pid_step(&fan_pid, &fan_pid_cfg,
-							     current_control.target_temp,
-							     current_sensor.temp);
-			}
-
-			ret = apply_fan_speed(duty_msg.duty);
-			if (ret < 0) {
-				LOG_ERR("Failed to apply fan speed: %d", ret);
-			}
-
-			ret = zbus_chan_pub(&duty_chan, &duty_msg, K_MSEC(10));
-			if (ret < 0) {
-				LOG_ERR("ZBus duty chan pub failed: %d", ret);
-			}
+		if (chan == &temp_chan) {
+			process_temp_chan_msg(&current_sensor, &current_control, &duty_msg,
+					      &fan_pid);
+		}
+		if (chan == &duty_override_chan) {
+			process_duty_override_chan_msg(&duty_msg);
+		}
+		if (chan == &pid_cal_chan) {
+			process_pid_cal_chan_msg();
 		}
 	}
 }
 
-/**
- * @brief Define and start the control manager thread.
- */
 K_THREAD_DEFINE(control_mgr_id, CONFIG_CONTROL_MGR_STACK_SIZE, control_mgr_entry, NULL, NULL, NULL,
 		CONFIG_CONTROL_MGR_PRIORITY, 0, 0);
