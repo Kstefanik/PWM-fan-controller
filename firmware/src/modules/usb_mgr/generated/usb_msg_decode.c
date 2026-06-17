@@ -35,9 +35,19 @@ static bool decode_CommandType(
 {
 	zcbor_log("%s\r\n", __func__);
 
-	bool res = (((((zcbor_uint_decode(state, &(*result).CommandType_choice, sizeof((*result).CommandType_choice)))) && ((((((*result).CommandType_choice == CommandType_cmd_set_target_temp_c) && (((1)
+	bool res = (((((zcbor_uint_decode(state, &(*result).CommandType_choice, sizeof((*result).CommandType_choice)))) && ((((((*result).CommandType_choice == CommandType_cmd_get_telemetry_c) && (((1)
+	&& (zcbor_nil_expect(state, NULL)))))
+	|| (((*result).CommandType_choice == CommandType_cmd_set_target_temp_c) && (((1)
 	&& (zcbor_float32_decode(state, (&(*result).cmd_set_target_temp))))))
-	|| (((*result).CommandType_choice == CommandType_cmd_enter_debug_mode_c) && (((1)
+	|| (((*result).CommandType_choice == CommandType_cmd_enter_debug_c) && (((1)
+	&& (zcbor_nil_expect(state, NULL)))))
+	|| (((*result).CommandType_choice == CommandType_cmd_exit_debug_c) && (((1)
+	&& (zcbor_nil_expect(state, NULL)))))
+	|| (((*result).CommandType_choice == CommandType_cmd_self_test_c) && (((1)
+	&& (zcbor_nil_expect(state, NULL)))))
+	|| (((*result).CommandType_choice == CommandType_cmd_override_pwm_duty_c) && (((1)
+	&& (zcbor_uint32_decode(state, (&(*result).cmd_override_pwm_duty))))))
+	|| (((*result).CommandType_choice == CommandType_cmd_calibrate_pid_c) && (((1)
 	&& (zcbor_nil_expect(state, NULL)))))) || (zcbor_error(state, ZCBOR_ERR_WRONG_VALUE), false))))));
 
 	log_result(state, res, __func__);
@@ -60,10 +70,16 @@ static bool decode_Telemetry(
 {
 	zcbor_log("%s\r\n", __func__);
 
-	bool res = (((zcbor_list_start_decode(state) && ((((zcbor_float32_decode(state, (&(*result).temp))))
-	&& ((zcbor_int32_decode(state, (&(*result).rpm))))
-	&& ((zcbor_uint32_decode(state, (&(*result).duty))))
-	&& ((zcbor_float32_decode(state, (&(*result).target_temp))))) || (zcbor_list_map_end_force_decode(state), false)) && zcbor_list_end_decode(state))));
+	bool res = (((zcbor_map_start_decode(state) && (((((zcbor_uint32_expect(state, (1))))
+	&& (zcbor_float32_decode(state, (&(*result).temp))))
+	&& (((zcbor_uint32_expect(state, (2))))
+	&& (zcbor_int32_decode(state, (&(*result).rpm))))
+	&& (((zcbor_uint32_expect(state, (3))))
+	&& (zcbor_uint32_decode(state, (&(*result).duty))))
+	&& (((zcbor_uint32_expect(state, (4))))
+	&& (zcbor_float32_decode(state, (&(*result).target_temp))))
+	&& (((zcbor_uint32_expect(state, (5))))
+	&& (zcbor_uint32_decode(state, (&(*result).system_state))))) || (zcbor_list_map_end_force_decode(state), false)) && zcbor_map_end_decode(state))));
 
 	log_result(state, res, __func__);
 	return res;

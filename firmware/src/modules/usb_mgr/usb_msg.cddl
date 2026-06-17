@@ -1,12 +1,18 @@
-;usb_msg.cddl
+; usb_msg.cddl
 
 ; --- DEVICE TO HOST (Upstream) ---
-Telemetry = [
-    temp: float32,
-    rpm: int,
-    duty: uint,
-    target_temp: float32
-]
+Telemetry = {
+    1 => temp:          float32,
+    2 => rpm:           int,
+    3 => duty:          uint,
+    4 => target_temp:   float32,
+    5 => system_state:  uint
+}
+
+; Top-level upstream wrapper
+Message = (
+    telemetry:        1 => Telemetry
+)
 
 ; --- HOST TO DEVICE (Downstream) ---
 Command = {
@@ -14,6 +20,11 @@ Command = {
 }
 
 CommandType = (
-    cmd_set_target_temp: 1 => float32 //
-    cmd_enter_debug_mode:  2 => null
+    cmd_get_telemetry:     1 => null       //
+    cmd_set_target_temp:   2 => float32    //
+    cmd_enter_debug:       3 => null       //
+    cmd_exit_debug:        4 => null       //
+    cmd_self_test:         5 => null       //
+    cmd_override_pwm_duty: 6 => uint       //
+    cmd_calibrate_pid:     7 => null
 )

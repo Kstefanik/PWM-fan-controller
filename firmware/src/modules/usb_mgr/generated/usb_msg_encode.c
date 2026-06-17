@@ -35,11 +35,21 @@ static bool encode_CommandType(
 {
 	zcbor_log("%s\r\n", __func__);
 
-	bool res = (((((*input).CommandType_choice == CommandType_cmd_set_target_temp_c) ? (((zcbor_uint32_put(state, (1))))
-	&& (zcbor_float32_encode(state, (&(*input).cmd_set_target_temp))))
-	: (((*input).CommandType_choice == CommandType_cmd_enter_debug_mode_c) ? (((zcbor_uint32_put(state, (2))))
+	bool res = (((((*input).CommandType_choice == CommandType_cmd_get_telemetry_c) ? (((zcbor_uint32_put(state, (1))))
 	&& (zcbor_nil_put(state, NULL)))
-	: false))));
+	: (((*input).CommandType_choice == CommandType_cmd_set_target_temp_c) ? (((zcbor_uint32_put(state, (2))))
+	&& (zcbor_float32_encode(state, (&(*input).cmd_set_target_temp))))
+	: (((*input).CommandType_choice == CommandType_cmd_enter_debug_c) ? (((zcbor_uint32_put(state, (3))))
+	&& (zcbor_nil_put(state, NULL)))
+	: (((*input).CommandType_choice == CommandType_cmd_exit_debug_c) ? (((zcbor_uint32_put(state, (4))))
+	&& (zcbor_nil_put(state, NULL)))
+	: (((*input).CommandType_choice == CommandType_cmd_self_test_c) ? (((zcbor_uint32_put(state, (5))))
+	&& (zcbor_nil_put(state, NULL)))
+	: (((*input).CommandType_choice == CommandType_cmd_override_pwm_duty_c) ? (((zcbor_uint32_put(state, (6))))
+	&& (zcbor_uint32_encode(state, (&(*input).cmd_override_pwm_duty))))
+	: (((*input).CommandType_choice == CommandType_cmd_calibrate_pid_c) ? (((zcbor_uint32_put(state, (7))))
+	&& (zcbor_nil_put(state, NULL)))
+	: false)))))))));
 
 	log_result(state, res, __func__);
 	return res;
@@ -61,10 +71,16 @@ static bool encode_Telemetry(
 {
 	zcbor_log("%s\r\n", __func__);
 
-	bool res = (((zcbor_list_start_encode(state, 4) && ((((zcbor_float32_encode(state, (&(*input).temp))))
-	&& ((zcbor_int32_encode(state, (&(*input).rpm))))
-	&& ((zcbor_uint32_encode(state, (&(*input).duty))))
-	&& ((zcbor_float32_encode(state, (&(*input).target_temp))))) || (zcbor_list_map_end_force_encode(state), false)) && zcbor_list_end_encode(state, 4))));
+	bool res = (((zcbor_map_start_encode(state, 5) && (((((zcbor_uint32_put(state, (1))))
+	&& (zcbor_float32_encode(state, (&(*input).temp))))
+	&& (((zcbor_uint32_put(state, (2))))
+	&& (zcbor_int32_encode(state, (&(*input).rpm))))
+	&& (((zcbor_uint32_put(state, (3))))
+	&& (zcbor_uint32_encode(state, (&(*input).duty))))
+	&& (((zcbor_uint32_put(state, (4))))
+	&& (zcbor_float32_encode(state, (&(*input).target_temp))))
+	&& (((zcbor_uint32_put(state, (5))))
+	&& (zcbor_uint32_encode(state, (&(*input).system_state))))) || (zcbor_list_map_end_force_encode(state), false)) && zcbor_map_end_encode(state, 5))));
 
 	log_result(state, res, __func__);
 	return res;
