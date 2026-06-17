@@ -40,7 +40,7 @@ menu "PWM Fan Controller Application"
     menu "USB Manager"
         config USB_MGR_STACK_SIZE
             int "Stack size for USB communication thread"
-            default 1024
+            default 2048
 
         config USB_MGR_PRIORITY
             int "Priority for USB communication thread"
@@ -50,6 +50,15 @@ menu "PWM Fan Controller Application"
             default 40
     endmenu
 
+    menu "System State"
+        config SYSTEM_STATE_STACK_SIZE
+            int "System state thread stack size"
+            default 1024
+        config SYSTEM_STATE_PRIORITY
+            int "System state thread priority"
+            default 4
+    endmenu
+
     menu "Tachometer Manager"
         config TACHO_MGR_STACK_SIZE
             int "Stack size for tachometer thread"
@@ -57,7 +66,7 @@ menu "PWM Fan Controller Application"
 
         config TACHO_MGR_PRIORITY
             int "Priority for tachometer thread"
-            default 4
+            default 1
 
         config TACHO_POLL_INTERVAL_MS
             int "Tachometer reading interval in ms"
