@@ -9,9 +9,9 @@ if __name__ == "__main__":
         datefmt="%Y-%m-%d %H:%M:%S",
     )
 
-    logging.info("Initializing PWM Fan Controller Host System Engine...")
+    logging.info("Initializing PWM Fan Controller")
 
-    usb_backend = UsbManager(vendor_id=0x2FE3, product_id=0x0001, baud=115200)
+    usb_backend = UsbManager(vendor_id=0x6767, product_id=0x0001, baud=115200)
     usb_backend.start()
 
     app = GuiManager(usb_manager=usb_backend)

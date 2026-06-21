@@ -30,7 +30,7 @@ except ImportError:
 
 class UsbManager:
     def __init__(
-        self, vendor_id: int = 0x2FE3, product_id: int = 0x0001, baud: int = 115200
+        self, vendor_id: int = 0x6767, product_id: int = 0x0001, baud: int = 115200
     ):
         self.vid = vendor_id
         self.pid = product_id
@@ -111,8 +111,6 @@ class UsbManager:
             self._rx_queue.put(decoded)
             return
 
-        if 2 in rx_data:
-            self._rx_queue.put({"msg_type": "self_test_report", "report": rx_data[2]})
 
     def _attempt_connection(self):
         port_name = self.find_device_port()
