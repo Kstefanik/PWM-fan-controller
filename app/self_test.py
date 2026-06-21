@@ -1,7 +1,7 @@
 import csv
 import time
 import logging
-from constants import CMD_EXIT_DEBUG, CMD_OVERRIDE_PWM_DUTY
+from constants import CMD_EXIT_DEBUG, CMD_OVERRIDE_PWM_DUTY, CMD_SET_TARGET_TEMP
 
 logger = logging.getLogger("FanController.TestSuite")
 
@@ -12,37 +12,35 @@ class Tester:
         self.get_latest_telemetry = telemetry_provider
 
     def run_all(self):
-        logger.info("Starting host-driven automated test cases...")
+        logger.info("running tests...")
         all_passed = True
         test_records = []
 
         try:
-            # --- TEST CASE 1: SENSOR READING ---
-            logger.info("[TEST] Step 1: Checking Temperature Sensor Snapshot...")
+            # test 1 - temp sensor check
+            logger.info("[TEST] step 1: checking temp sensor...")
             time.sleep(0.2)
-
             latest_tlm = self.get_latest_telemetry()
             temp = latest_tlm.get("temp")
             is_valid = latest_tlm.get("is_valid", True)
-
             step1_passed = False
             details = ""
-            measured_str = "No Variable Detected"
+            measured_str = "no reading"
 
             if temp is None:
-                details = "No temperature variable detected in telemetry packet."
+                details = "temp missing from telemetry packet"
             elif 10.0 <= temp <= 100.0 and is_valid is True:
                 step1_passed = True
-                measured_str = f"{temp:.2f} °C (Valid: {is_valid})"
+                measured_str = f"{temp:.2f} C (valid={is_valid})"
                 logger.info(
-                    f"  -> [PASS]: Temperature is working. Value: {measured_str}"
+                    f" -> [PASS]: temp ok, got: {measured_str}"
                 )
             else:
                 details = (
-                    f"Range/Validity breach. Value: {temp:.2f} °C, Valid: {is_valid}"
+                    f"out of range. got: {temp:.2f} C, valid={is_valid}"
                 )
-                measured_str = f"{temp:.2f} °C (Valid: {is_valid})"
-                logger.error(f"  -> [FAIL]: {details}")
+                measured_str = f"{temp:.2f} C (valid={is_valid})"
+                logger.error(f" -> [FAIL]: {details}")
 
             test_records.append(
                 self._create_record(
@@ -56,26 +54,22 @@ class Tester:
             if not step1_passed:
                 all_passed = False
 
-            # --- TEST CASE 2: PWM 100% ---
-            logger.info("[TEST] Step 2: Overriding PWM to 100%...")
-            self.usb.send_command(
-                cmd_id=CMD_OVERRIDE_PWM_DUTY, value=100
-            )
+            # test 2 - PWM 100%
+            logger.info("[TEST] step 2: setting PWM to 100%...")
+            self.usb.send_command(cmd_id=CMD_OVERRIDE_PWM_DUTY, value=100)
             time.sleep(5.0)
-
             rpm = self.get_latest_telemetry().get("rpm", 0)
             step2_passed = 1200 < rpm < 1600
             details = (
                 ""
                 if step2_passed
-                else f"RPM outside full throttle spec! Got: {rpm} RPM"
+                else f"rpm out of range at 100%: {rpm} RPM"
             )
             (
-                logger.info(f"  -> [PASS]: RPM within constraints: {rpm} RPM")
+                logger.info(f" -> [PASS]: rpm ok: {rpm} RPM")
                 if step2_passed
-                else logger.error(f"  -> [FAIL]: {details}")
+                else logger.error(f" -> [FAIL]: {details}")
             )
-
             test_records.append(
                 self._create_record(
                     "PWM 100% Full Throttle",
@@ -88,24 +82,22 @@ class Tester:
             if not step2_passed:
                 all_passed = False
 
-            # --- TEST CASE 3: PWM 20% ---
-            logger.info("[TEST] Step 3: Reducing PWM to 20%...")
+            # test 3 - PWM 20%
+            logger.info("[TEST] step 3: setting PWM to 20%...")
             self.usb.send_command(cmd_id=CMD_OVERRIDE_PWM_DUTY, value=20)
             time.sleep(5.0)
-
             rpm = self.get_latest_telemetry().get("rpm", 0)
             step3_passed = rpm > 0
             details = (
                 ""
                 if step3_passed
-                else f"Fan engine stalled under low duty cycle! Got: {rpm} RPM"
+                else f"fan stalled at 20%: {rpm} RPM"
             )
             (
-                logger.info(f"  -> [PASS]: Rotation remains active: {rpm} RPM")
+                logger.info(f" -> [PASS]: fan still spinning: {rpm} RPM")
                 if step3_passed
-                else logger.error(f"  -> [FAIL]: {details}")
+                else logger.error(f" -> [FAIL]: {details}")
             )
-
             test_records.append(
                 self._create_record(
                     "PWM 20% Low Throttle",
@@ -118,24 +110,22 @@ class Tester:
             if not step3_passed:
                 all_passed = False
 
-            # --- TEST CASE 4: PWM 0% ---
-            logger.info("[TEST] Step 4: Cutting PWM output entirely (0%)...")
+            # test 4 - PWM 0%
+            logger.info("[TEST] step 4: setting PWM to 0%...")
             self.usb.send_command(cmd_id=CMD_OVERRIDE_PWM_DUTY, value=0)
             time.sleep(5.0)
-
             rpm = self.get_latest_telemetry().get("rpm", 0)
             step4_passed = rpm == 0
             details = (
                 ""
                 if step4_passed
-                else f"Residual spin-down torque tracking failure. Got: {rpm} RPM"
+                else f"fan didn't stop: {rpm} RPM"
             )
             (
-                logger.info("  -> [PASS]: Rotor brought to a complete rest.")
+                logger.info(" -> [PASS]: fan stopped.")
                 if step4_passed
-                else logger.error(f"  -> [FAIL]: {details}")
+                else logger.error(f" -> [FAIL]: {details}")
             )
-
             test_records.append(
                 self._create_record(
                     "PWM 0% Stop Verification",
@@ -148,19 +138,102 @@ class Tester:
             if not step4_passed:
                 all_passed = False
 
+            # test 5 - step response curve (disabled for now)
+            # logger.info(
+            #     "[TEST] step 5: logging step response curve data..."
+            # )
+            # # PID in Zephyr only works in SYSTEM_STATE_NORMAL,
+            # # right now we're in SYSTEM_STATE_SELF_TEST so need to switch states
+            # logger.info(" -> exiting self-test so PID kicks in...")
+            # self.usb.send_command(
+            #     cmd_id=CMD_EXIT_DEBUG
+            # )  # SELF_TEST -> DEBUG_IDLE
+            # time.sleep(0.5)
+            # self.usb.send_command(
+            #     cmd_id=CMD_EXIT_DEBUG
+            # )  # DEBUG_IDLE -> NORMAL
+            # time.sleep(1.0)  # wait for control_mgr to settle in NORMAL
+            #
+            # # PID is running now, set the target temp
+            # self.usb.send_command(cmd_id=CMD_SET_TARGET_TEMP, value=65.0)
+            # duration = 300.0       # how long to collect data, seconds (5 min)
+            # poll_interval = 1.0    # sample rate
+            # step_data = []
+            # logger.info(
+            #     f"collecting data for {int(duration)}s, please wait..."
+            # )
+            # start_time = time.time()
+            # while True:
+            #     elapsed = time.time() - start_time
+            #     if elapsed > duration:
+            #         break
+            #     tlm = self.get_latest_telemetry()
+            #     step_data.append(
+            #         {
+            #             "Time (s)": round(elapsed, 2),
+            #             "Temperature (C)": tlm.get("temp", 0.0),
+            #             "Target Temp (C)": tlm.get("target_temp", 0.0),
+            #             "PWM Duty (%)": tlm.get("duty", 0),
+            #             "RPM": tlm.get("rpm", 0),
+            #         }
+            #     )
+            #     time.sleep(poll_interval)
+            #
+            # step_csv_filename = (
+            #     f"step_response_data_{time.strftime('%Y%m%d_%H%M%S')}.csv"
+            # )
+            # step5_passed = False
+            # details = ""
+            # try:
+            #     step_fields = [
+            #         "Time (s)",
+            #         "Temperature (C)",
+            #         "Target Temp (C)",
+            #         "PWM Duty (%)",
+            #         "RPM",
+            #     ]
+            #     with open(
+            #         step_csv_filename, mode="w", newline="", encoding="utf-8"
+            #     ) as step_file:
+            #         writer = csv.DictWriter(step_file, fieldnames=step_fields)
+            #         writer.writeheader()
+            #         writer.writerows(step_data)
+            #     logger.info(
+            #         f" -> [PASS]: data saved to '{step_csv_filename}'"
+            #     )
+            #     step5_passed = True
+            #     details = f"saved {len(step_data)} samples to {step_csv_filename}"
+            # except Exception as e:
+            #     logger.error(f" -> [FAIL]: CSV write failed: {e}")
+            #     details = f"CSV error: {e}"
+            #
+            # test_records.append(
+            #     self._create_record(
+            #         "Step Response Curve",
+            #         step5_passed,
+            #         "Data Logged",
+            #         f"{int(duration)}s Run",
+            #         details,
+            #     )
+            # )
+            # if not step5_passed:
+            #     all_passed = False
+
+            # done
             if all_passed:
-                logger.info("=== [SUCCESS]: All Host Automated Test Cases Passed! ===")
+                logger.info("=== [OK]: all tests passed ===")
             else:
-                logger.warning("=== [FAILURE]: One or more test cases failed! ===")
+                logger.warning("=== [FAIL]: something went wrong ===")
 
         except Exception as e:
             logger.error(
-                f"Unexpected exception inside execution loop: {e}", exc_info=True
+                f"unexpected exception: {e}", exc_info=True
             )
         finally:
             self._write_csv_report(test_records)
-            logger.info("[TEST] Forcing system safely back to regular monitoring...")
+            logger.info("[TEST] putting system back to normal mode...")
             if self.usb.is_connected:
+                self.usb.send_command(cmd_id=CMD_EXIT_DEBUG)
                 self.usb.send_command(cmd_id=CMD_EXIT_DEBUG)
 
     def _create_record(self, name, passed, measured, expected, notes):
@@ -190,6 +263,6 @@ class Tester:
                 writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
                 writer.writeheader()
                 writer.writerows(records)
-            logger.info(f"Run summary written out to logfile: '{filename}'")
+            logger.info(f"report saved to '{filename}'")
         except Exception as csv_err:
-            logger.error(f"Failed to output test compilation log to CSV: {csv_err}")
+            logger.error(f"couldn't save report: {csv_err}")
