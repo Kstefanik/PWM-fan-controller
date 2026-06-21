@@ -199,7 +199,7 @@ void system_state_post_event(SystemEvent event)
 	k_event_post(&s_obj.smf_event, EVENT_NEW_TRANSITION);
 }
 
-static void system_state_thread_entry(void *p1, void *p2, void *p3)
+static void system_state_entry(void *p1, void *p2, void *p3)
 {
 	ARG_UNUSED(p1);
 	ARG_UNUSED(p2);
@@ -209,5 +209,5 @@ static void system_state_thread_entry(void *p1, void *p2, void *p3)
 	system_state_run();
 }
 
-K_THREAD_DEFINE(system_state_id, CONFIG_SYSTEM_STATE_STACK_SIZE, system_state_thread_entry, NULL,
-		NULL, NULL, CONFIG_SYSTEM_STATE_PRIORITY, 0, 0);
+K_THREAD_DEFINE(system_state_id, CONFIG_SYSTEM_STATE_STACK_SIZE, system_state_entry, NULL, NULL,
+		NULL, CONFIG_SYSTEM_STATE_PRIORITY, 0, 0);

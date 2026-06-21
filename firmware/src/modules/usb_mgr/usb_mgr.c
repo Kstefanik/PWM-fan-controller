@@ -46,7 +46,7 @@ static void process_duty_override_cmd(struct Command *cmd)
 
 		ret = zbus_chan_pub(&duty_override_chan, &override_msg, K_NO_WAIT);
 		if (ret < 0) {
-			LOG_ERR("ZBus override publish failed: %d", ret);
+			LOG_ERR("ZBus duty override chan publish failed: %d", ret);
 		}
 	} else {
 		LOG_WRN("Cannot override PWM duty: not in SELF_TEST (state=%d)",
@@ -71,12 +71,16 @@ static void process_calibrate_pid_cmd()
 	struct pid_cal_data trigger = {};
 	ret = zbus_chan_pub(&pid_cal_chan, &trigger, K_NO_WAIT);
 	if (ret < 0) {
-		LOG_ERR("ZBus pid cal publish failed: %d", ret);
+		LOG_ERR("ZBus pid cal chan publish failed: %d", ret);
 	}
 }
 
-static void usb_mgr_entry(void)
+static void usb_mgr_entry(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	int ret;
 
 	ret = usb_init(usb_dev, &cmd_rx_sem);

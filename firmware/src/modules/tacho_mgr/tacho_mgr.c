@@ -70,7 +70,7 @@ static void tacho_mgr_entry(void *p1, void *p2, void *p3)
 		if (do_publish) {
 			ret = zbus_chan_pub(&rpm_chan, &msg, K_MSEC(10));
 			if (ret < 0) {
-				LOG_ERR("ZBus rpm chan pub failed: %d", ret);
+				LOG_ERR("ZBus rpm chan publish failed: %d", ret);
 			}
 		}
 

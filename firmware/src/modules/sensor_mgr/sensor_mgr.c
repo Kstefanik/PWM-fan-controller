@@ -51,7 +51,7 @@ static void sensor_mgr_entry(void *p1, void *p2, void *p3)
 		if (ret == 0) {
 			ret = zbus_chan_pub(&temp_chan, &msg, K_MSEC(10));
 			if (ret < 0) {
-				LOG_ERR("ZBus temp chan pub failed: %d", ret);
+				LOG_ERR("ZBus temp chan publish failed: %d", ret);
 			}
 		}
 
