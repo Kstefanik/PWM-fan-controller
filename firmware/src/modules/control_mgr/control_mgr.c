@@ -9,10 +9,10 @@
 
 LOG_MODULE_REGISTER(control_mgr, LOG_LEVEL_INF);
 
-/* Register as a ZBus subscriber */
 ZBUS_SUBSCRIBER_DEFINE(control_mgr, CONFIG_ZBUS_QUEUE_SIZE);
 
 #define FAILSAFE_DUTY 100
+#define FAN_IDLE_DUTY 50.0f
 
 #define FAN_PWM_NODE DT_NODELABEL(fan_pwm)
 static const struct pwm_dt_spec fan_pwm = PWM_DT_SPEC_GET(FAN_PWM_NODE);
@@ -33,13 +33,13 @@ struct pid_state {
 	bool initialized; /**< Initialization flag */
 };
 
-static const struct pid_config fan_pid_cfg = {.kp = 25.0f,
-					      .ki = 1.5f,
-					      .kd = 0.5f,
-					      .dt = 1.0f,
-					      .min_output = 0.0f,
-					      .max_output = 100.0f,
-					      .integral_limit = 40.0f};
+static struct pid_config fan_pid_cfg = {.kp = 8.0f,
+					.ki = 0.3f,
+					.kd = 2.0f,
+					.dt = 1.0f,
+					.min_output = 20.0f,
+					.max_output = 100.0f,
+					.integral_limit = 30.0f};
 
 static int apply_fan_speed(uint8_t duty_percent)
 {
@@ -51,6 +51,13 @@ static int apply_fan_speed(uint8_t duty_percent)
 		LOG_ERR("Failed to set pwm duty: %d", ret);
 		return ret;
 	}
+
+	struct pid_data p = {.duty = clamped_duty};
+	ret = zbus_chan_pub(&duty_chan, &p, K_NO_WAIT);
+	if (ret < 0) {
+		LOG_ERR("ZBus duty chan publish failed: %d", ret);
+	}
+
 	return 0;
 }
 
@@ -72,26 +79,33 @@ static uint8_t run_pid_step(struct pid_state *state, const struct pid_config *cf
 	float d_term = cfg->kd * ((error - state->last_error) / cfg->dt);
 	state->last_error = error;
 
-	float output = p_term + state->integral + d_term;
+	float output = FAN_IDLE_DUTY + p_term + state->integral + d_term;
 
 	return (uint8_t)CLAMP(output, cfg->min_output, cfg->max_output);
 }
 
-static void calibrate_pid()
+static void calibrate_pid(struct pid_config *cfg, struct pid_state *state)
 {
-	// Simulate performing pid calibration
-	k_sleep(K_SECONDS(5));
+
+  // PID calibration feature not implemented
+
+	// Simulate PID calibration
+	k_msleep(10000);
+
 	system_state_post_event(SYSTEM_EVENT_DONE);
+  // Delay to make sure the system_state thread catches the second system event
+	k_msleep(20);
+	system_state_post_event(SYSTEM_EVENT_EXIT_DEBUG);
 }
 
-static void process_pid_cal_chan_msg()
+static void process_pid_cal_chan_msg(struct pid_config *cfg, struct pid_state *state)
 {
 	if (system_state_get() != SYSTEM_STATE_PID_CAL) {
 		LOG_WRN("Pid calibration cmd received not in SYSTEM_STATE_PID_CAL");
 		return;
 	}
 
-	calibrate_pid();
+	calibrate_pid(cfg, state);
 }
 
 static void process_duty_override_chan_msg(struct pid_data *duty_msg)
@@ -102,17 +116,12 @@ static void process_duty_override_chan_msg(struct pid_data *duty_msg)
 	ret = zbus_chan_read(&duty_override_chan, &override_data, K_MSEC(10));
 
 	if (ret == 0 && system_state_get() == SYSTEM_STATE_SELF_TEST) {
-		// Apply the manual speed directly to hardware
 		ret = apply_fan_speed(override_data.duty);
 		if (ret < 0) {
-			LOG_ERR("Failed to apply fan speed:  %d", ret);
+			LOG_ERR("Failed to apply fan speed: %d", ret);
 		}
 
 		duty_msg->duty = override_data.duty;
-		ret = zbus_chan_pub(&duty_chan, duty_msg, K_MSEC(10));
-		if (ret < 0) {
-			LOG_ERR("ZBus duty chan publish failed: %d", ret);
-		}
 	}
 }
 
@@ -137,10 +146,6 @@ static void process_temp_chan_msg(struct sensor_data *current_sensor,
 		duty_msg->duty = run_pid_step(fan_pid, &fan_pid_cfg, current_control->target_temp,
 					      current_sensor->temp);
 		apply_fan_speed(duty_msg->duty);
-		ret = zbus_chan_pub(&duty_chan, duty_msg, K_MSEC(10));
-		if (ret < 0) {
-			LOG_ERR("ZBus duty chan publish failed: %d", ret);
-		}
 	}
 }
 
@@ -166,7 +171,6 @@ static void control_mgr_entry(void *p1, void *p2, void *p3)
 	while (1) {
 		ret = zbus_sub_wait(&control_mgr, &chan, K_MSEC(3000));
 		if (ret == -EAGAIN) {
-			// ONLY apply failsafe if we are actively trying to regulate in NORMAL mode
 			if (system_state_get() == SYSTEM_STATE_NORMAL) {
 				LOG_WRN("Sensor timeout - applying failsafe duty");
 				apply_fan_speed(FAILSAFE_DUTY);
@@ -185,7 +189,7 @@ static void control_mgr_entry(void *p1, void *p2, void *p3)
 			process_duty_override_chan_msg(&duty_msg);
 		}
 		if (chan == &pid_cal_chan) {
-			process_pid_cal_chan_msg();
+			process_pid_cal_chan_msg(&fan_pid_cfg, &fan_pid);
 		}
 	}
 }
