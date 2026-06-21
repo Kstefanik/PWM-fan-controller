@@ -47,7 +47,7 @@ menu "PWM Fan Controller Application"
             default 5
         config DEFAULT_TARGET_TEMP
             int "Default target temperature value"
-            default 40
+            default 65
     endmenu
 
     menu "System State"
