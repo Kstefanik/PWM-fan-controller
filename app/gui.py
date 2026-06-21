@@ -9,6 +9,7 @@ from constants import (
     CMD_EXIT_DEBUG,
     CMD_SELF_TEST,
     CMD_CALIBRATE_PID,
+    
     SYSTEM_STATE_NORMAL,
     SYSTEM_STATE_DEBUG_IDLE,
     SYSTEM_STATE_SELF_TEST,
@@ -96,7 +97,7 @@ class GuiManager(ctk.CTk):
             current_row += 1
 
         self.lbl_slider_val = ctk.CTkLabel(
-            self.left_frame, text="Selected Target: 40.0 °C", font=("Arial", 13)
+            self.left_frame, text="Selected Target: 65.0 °C", font=("Arial", 13)
         )
         self.lbl_slider_val.grid(
             row=current_row, column=0, columnspan=2, padx=20, pady=(20, 0), sticky="w"
@@ -110,7 +111,7 @@ class GuiManager(ctk.CTk):
             number_of_steps=650,
             command=self.on_slider_move,
         )
-        self.slider_temp.set(40.0)
+        self.slider_temp.set(65.0)
         self.slider_temp.grid(
             row=current_row, column=0, padx=(20, 10), pady=(5, 20), sticky="ew"
         )
@@ -149,13 +150,15 @@ class GuiManager(ctk.CTk):
         )
         self.btn_self_test.grid(row=2, column=0, padx=20, pady=10, sticky="ew")
 
-        self.btn_pid_cal = ctk.CTkButton(
-            self.right_frame,
-            text="Calibrate PID",
-            font=("Arial", 13, "bold"),
-            command=self.run_pid_calibration,
-        )
-        self.btn_pid_cal.grid(row=3, column=0, padx=20, pady=10, sticky="ew")
+        # Disabled PID calibration feature not implemented on zephyr device side
+
+        # self.btn_pid_cal = ctk.CTkButton(
+        #     self.right_frame,
+        #     text="Calibrate PID",
+        #     font=("Arial", 13, "bold"),
+        #     command=self.run_pid_calibration,
+        # )
+        # self.btn_pid_cal.grid(row=3, column=0, padx=20, pady=10, sticky="ew")
 
     def auto_request_telemetry(self):
         if self.usb.is_connected:
@@ -219,7 +222,8 @@ class GuiManager(ctk.CTk):
         self.after(200, self.monitor_connection_health)
 
     def update_widget_states(self):
-        action_buttons = [self.btn_toggle_debug, self.btn_self_test, self.btn_pid_cal]
+        # action_buttons = [self.btn_toggle_debug, self.btn_self_test, self.btn_pid_cal]
+        action_buttons = [self.btn_toggle_debug, self.btn_self_test]
         default_blue = ["#3B8ED0", "#1F6AA5"]
 
         if not self.usb.is_connected:
@@ -229,7 +233,10 @@ class GuiManager(ctk.CTk):
                 text="Enter Debug Mode", fg_color=default_blue
             )
             self.btn_self_test.configure(text="Run Self Test", fg_color=default_blue)
-            self.btn_pid_cal.configure(text="Calibrate PID", fg_color=default_blue)
+
+            # Disabled PID calibration feature not implemented on zephyr device side
+
+            # self.btn_pid_cal.configure(text="Calibrate PID", fg_color=default_blue)
             return
 
         control_state = (
@@ -248,9 +255,12 @@ class GuiManager(ctk.CTk):
             self.btn_self_test.configure(
                 state="disabled", text="Run Self Test", fg_color=default_blue
             )
-            self.btn_pid_cal.configure(
-                state="disabled", text="Calibrate PID", fg_color=default_blue
-            )
+
+            # Disabled PID calibration feature not implemented on zephyr device side
+
+            # self.btn_pid_cal.configure(
+            #     state="disabled", text="Calibrate PID", fg_color=default_blue
+            # )
 
         elif self.current_system_state == SYSTEM_STATE_DEBUG_IDLE:
             self.btn_toggle_debug.configure(
@@ -265,12 +275,15 @@ class GuiManager(ctk.CTk):
                 fg_color=default_blue,
                 hover_color=["#2B73B9", "#17548C"],
             )
-            self.btn_pid_cal.configure(
-                state="normal",
-                text="Calibrate PID",
-                fg_color=default_blue,
-                hover_color=["#2B73B9", "#17548C"],
-            )
+
+            # Disabled PID calibration feature not implemented on zephyr device side
+
+            # self.btn_pid_cal.configure(
+            #     state="normal",
+            #     text="Calibrate PID",
+            #     fg_color=default_blue,
+            #     hover_color=["#2B73B9", "#17548C"],
+            # )
 
         elif self.current_system_state == SYSTEM_STATE_SELF_TEST:
             self.btn_toggle_debug.configure(
@@ -279,9 +292,12 @@ class GuiManager(ctk.CTk):
             self.btn_self_test.configure(
                 state="disabled", text="Self Test Running...", fg_color="#E65100"
             )
-            self.btn_pid_cal.configure(
-                state="disabled", text="Calibrate PID", fg_color=default_blue
-            )
+
+            # Disabled PID calibration feature not implemented on zephyr device side
+
+            # self.btn_pid_cal.configure(
+            #     state="disabled", text="Calibrate PID", fg_color=default_blue
+            # )
 
         elif self.current_system_state == SYSTEM_STATE_PID_CAL:
             self.btn_toggle_debug.configure(
@@ -290,9 +306,12 @@ class GuiManager(ctk.CTk):
             self.btn_self_test.configure(
                 state="disabled", text="Run Self Test", fg_color=default_blue
             )
-            self.btn_pid_cal.configure(
-                state="disabled", text="PID Calibrating...", fg_color="#2E7D32"
-            )
+            
+            # Disabled PID calibration feature not implemented on zephyr device side
+
+            # self.btn_pid_cal.configure(
+            #     state="disabled", text="PID Calibrating...", fg_color="#2E7D32"
+            # )
 
     def toggle_debug_mode(self):
         if not self.usb.is_connected:
